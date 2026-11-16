@@ -1,0 +1,939 @@
+/* ==========================================================================
+   Acompanha — style.css
+   1. Variáveis
+   2. Base
+   3. Cabeçalho e navegação
+   4. Rodapé
+   5. Componentes reutilizáveis (botões, seções, textos)
+   6. Página inicial
+   7. Sobre
+   8. FAQ
+   9. Integrantes
+   10. Contato
+   Medidas em rem (1rem = 16px); só bordas e contorno de foco ficam em px.
+   Layout feito só com Flexbox.
+   ========================================================================== */
+
+/* 1. Variáveis */
+:root {
+  --cor-principal: #1E2F5E;          /* azul-marinho sóbrio */
+  --cor-destaque: #F97316;           /* laranja: alerta e risco, em pequenos detalhes */
+  --cor-destaque-texto: #C2410C;     /* laranja mais escuro, para texto ter contraste no fundo claro */
+  --cor-fundo: #F8FAFC;              /* off-white */
+  --cor-texto: #1E293B;              /* cinza-escuro */
+
+  --cor-principal-escura: #141F40;
+
+  /* Verde-água: assistente, ações de conversa e dados em destaque */
+  --cor-assistente: #0E7C74;         /* botões "Testar / Conversar com o assistente" */
+  --cor-assistente-escura: #0A5F59;  /* hover desses botões */
+  --cor-assistente-clara: #E3F1EF;   /* balões de resposta do assistente */
+  --cor-dado: #0B6A77;               /* números e valores em destaque */
+  --cor-principal-clara: #E6EAF2;
+  --cor-superficie: #F1F5F9;
+  --cor-branco: #FFFFFF;
+  --cor-texto-suave: #475569;
+  --cor-texto-apoio: #64748B;
+  --cor-borda: #E2E8F0;
+  --cor-borda-forte: #CBD5E1;
+  --cor-rodape-texto: #C3CAD9;
+
+  --fonte: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fonte-marca: "Montserrat", var(--fonte);                  /* mesma fonte do logo */
+  --fonte-leitura: "Atkinson Hyperlegible", var(--fonte);     /* criada para baixa visão */
+  --largura-max: 75rem;
+}
+
+/* 2. Base */
+* {
+  box-sizing: border-box;
+}
+
+/* body em coluna: o <main> ocupa o espaço livre e o rodapé fica sempre no fim */
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-family: var(--fonte);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+}
+
+main {
+  flex: 1;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 800;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: var(--cor-principal);
+}
+
+a:hover {
+  color: var(--cor-principal-escura);
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--cor-destaque);
+  outline-offset: 3px;
+}
+
+/* 3. Cabeçalho e navegação */
+.cabecalho {
+  background: var(--cor-branco);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.cabecalho__conteudo {
+  max-width: var(--largura-max);
+  margin: 0 auto;
+  padding: 1.125rem 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cabecalho__logo img {
+  height: 2rem;
+  width: auto;
+}
+
+.menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.menu__link {
+  display: block;
+  padding: 0.75rem 0.875rem;
+  font-size: 1rem;
+  border-radius: 0.625rem;
+  color: var(--cor-texto);
+  text-decoration: none;
+}
+
+.menu__link:hover {
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+}
+
+/* Chamada principal do menu */
+.menu__link--destaque {
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  background: var(--cor-assistente);
+  color: var(--cor-branco);
+  font-weight: 700;
+}
+
+.menu__link--destaque:hover {
+  background: var(--cor-assistente-escura);
+  color: var(--cor-branco);
+}
+
+/* Página atual */
+.menu__link--ativo {
+  background: var(--cor-principal-clara);
+  color: var(--cor-principal);
+  font-weight: 700;
+}
+
+/* 4. Rodapé */
+.rodape {
+  background: var(--cor-principal);
+  color: var(--cor-branco);
+}
+
+.rodape__conteudo {
+  max-width: var(--largura-max);
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.rodape__logo {
+  height: 1.875rem;
+  width: auto;
+}
+
+.rodape__texto {
+  color: var(--cor-rodape-texto);
+}
+
+.rodape__links {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  gap: 1.25rem;
+}
+
+.rodape__links a {
+  color: var(--cor-branco);
+}
+
+/* 5. Componentes reutilizáveis */
+.secao {
+  max-width: var(--largura-max);
+  margin: 0 auto;
+  padding: 4.5rem 2rem;
+}
+
+/* Faixa branca de ponta a ponta, com o conteúdo centralizado dentro */
+.faixa-branca {
+  background: var(--cor-branco);
+  border-top: 1px solid var(--cor-borda);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.titulo-secao {
+  font-size: 1.9375rem;
+  letter-spacing: -0.01em;
+}
+
+.titulo-pagina {
+  font-size: 2.4375rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.sobretitulo {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cor-principal);
+}
+
+.texto-destaque {
+  font-size: 1.3125rem;
+  color: var(--cor-texto-suave);
+}
+
+.texto-suave {
+  color: var(--cor-texto-suave);
+}
+
+.botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.botao {
+  display: inline-block;
+  padding: 1rem 1.625rem;
+  border: 2px solid var(--cor-principal);
+  border-radius: 0.875rem;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.botao--principal {
+  background: var(--cor-principal);
+  color: var(--cor-branco);
+}
+
+.botao--principal:hover {
+  background: var(--cor-principal-escura);
+  border-color: var(--cor-principal-escura);
+  color: var(--cor-branco);
+}
+
+.botao--assistente {
+  background: var(--cor-assistente);
+  border-color: var(--cor-assistente);
+  color: var(--cor-branco);
+}
+
+.botao--assistente:hover {
+  background: var(--cor-assistente-escura);
+  border-color: var(--cor-assistente-escura);
+  color: var(--cor-branco);
+}
+
+.botao--secundario {
+  background: var(--cor-branco);
+  color: var(--cor-principal);
+}
+
+.botao--secundario:hover {
+  background: var(--cor-principal-clara);
+  color: var(--cor-principal);
+}
+
+/* Palavras de alerta dentro de um parágrafo */
+.texto-alerta {
+  color: var(--cor-destaque-texto);
+  font-weight: 700;
+}
+
+/* Acordeão de perguntas: usa <details> e <summary> do próprio HTML */
+.pergunta {
+  background: var(--cor-branco);
+  border: 2px solid var(--cor-borda);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.pergunta__titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.125rem 1.375rem;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.pergunta__titulo::-webkit-details-marker {
+  display: none;
+}
+
+.pergunta__titulo::after {
+  content: "+";
+  font-size: 1.375rem;
+  line-height: 1;
+  color: var(--cor-principal);
+}
+
+.pergunta[open] .pergunta__titulo::after {
+  content: "−";
+}
+
+.pergunta__resposta {
+  padding: 0 1.375rem 1.25rem;
+  color: var(--cor-texto-suave);
+}
+
+/* 6. Página inicial */
+.hero {
+  max-width: var(--largura-max);
+  margin: 0 auto;
+  padding: 5.5rem 2rem 4.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3.5rem;
+}
+
+.hero__texto {
+  flex: 1 1 32.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.hero__titulo {
+  font-size: 3rem;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+
+.hero__texto .texto-destaque {
+  max-width: 35rem;
+}
+
+.hero__visual {
+  flex: 1 1 25rem;
+  display: flex;
+  justify-content: center;
+}
+
+/* Exemplo de conversa no Telegram */
+.conversa {
+  width: 100%;
+  max-width: 26.25rem;
+  margin: 0;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  background: var(--cor-branco);
+  border-radius: 1.75rem;
+  box-shadow: 0 1.5rem 3.75rem rgba(30, 41, 59, 0.12);
+}
+
+.conversa__topo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.conversa__avatar {
+  width: 3rem;
+  height: 3rem;
+  padding: 0.5rem;
+}
+
+.conversa__nome {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+}
+
+.conversa__nome span {
+  font-size: 0.875rem;
+  color: var(--cor-texto-apoio);
+}
+
+.balao {
+  max-width: 85%;
+  font-family: var(--fonte-leitura);
+  padding: 0.75rem 1rem;
+}
+
+.balao--assistente {
+  align-self: flex-start;
+  background: var(--cor-assistente-clara);
+  border-radius: 1.125rem 1.125rem 1.125rem 0.375rem;
+}
+
+.balao--idoso {
+  align-self: flex-end;
+  background: var(--cor-principal);
+  color: var(--cor-branco);
+  border-radius: 1.125rem 1.125rem 0.375rem 1.125rem;
+}
+
+.balao__audio {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--cor-assistente);
+}
+
+.balao__audio img {
+  height: 1rem;
+  width: auto;
+}
+
+/* Como funciona */
+.passos__conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.passos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.passo {
+  flex: 1 1 16.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.passo__numero {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cor-principal);
+  color: var(--cor-branco);
+  font-size: 1.0625rem;
+  font-weight: 800;
+}
+
+/* Único destaque laranja da página: o passo do alerta */
+.passo__numero--alerta {
+  background: var(--cor-destaque);
+  color: var(--cor-texto);
+}
+
+.passo__titulo {
+  font-size: 1.1875rem;
+}
+
+/* Por que isso importa */
+.importancia {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 3rem;
+}
+
+.importancia__texto {
+  flex: 1 1 28.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.importancia__dados {
+  flex: 1 1 28.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.dado {
+  flex: 1 1 12.5rem;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  border-left: 3px solid var(--cor-dado);
+}
+
+.dado__valor {
+  font-family: var(--fonte-marca);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--cor-dado);
+}
+
+.dado__descricao {
+  margin: 0;
+  font-size: 1.125rem;
+  color: var(--cor-texto-suave);
+}
+
+.dado__fonte {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--cor-texto-apoio);
+}
+
+/* Prévia da FAQ */
+.faq-previa {
+  max-width: 53.75rem;
+  margin: 0 auto;
+  padding: 4.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.faq-previa__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* 7. Sobre */
+.apresentacao {
+  max-width: var(--largura-max);
+  margin: 0 auto;
+  padding: 5rem 2rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+}
+
+.apresentacao .titulo-pagina {
+  font-size: 2.75rem;
+  max-width: 51.25rem;
+}
+
+.apresentacao .texto-destaque {
+  max-width: 45rem;
+}
+
+/* Problema, objetivo e proposta: três colunas de texto separadas por uma linha */
+.pilares {
+  max-width: var(--largura-max);
+  margin: 0 auto;
+  padding: 0 2rem 4.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5rem;
+}
+
+.pilar {
+  flex: 1 1 17.5rem;
+  padding-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  border-top: 2px solid var(--cor-borda);
+}
+
+.pilar__rotulo {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cor-principal);
+}
+
+.pilar__titulo {
+  font-size: 1.375rem;
+}
+
+/* O problema ganha a linha e o rótulo em laranja (alerta) */
+.pilar--alerta {
+  border-top-color: var(--cor-destaque);
+}
+
+.pilar--alerta .pilar__rotulo {
+  color: var(--cor-destaque-texto);
+}
+
+/* A proposta ganha a linha de destaque */
+.pilar--destaque {
+  border-top-color: var(--cor-principal);
+}
+
+/* Para quem é: três colunas simples */
+.publico {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.publico__lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5rem;
+}
+
+.publico__item {
+  flex: 1 1 15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.publico__item h3 {
+  font-size: 1.125rem;
+}
+
+/* Tecnologias: lista em linhas, nome à esquerda e descrição à direita */
+.tecnologias {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tecnologias__lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.tecnologia {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.tecnologia:first-child {
+  border-top: 1px solid var(--cor-borda);
+}
+
+.tecnologia strong {
+  flex: 0 0 15rem;
+  color: var(--cor-principal);
+}
+
+.tecnologia span {
+  flex: 1 1 22.5rem;
+  color: var(--cor-texto-suave);
+}
+
+/* 8. FAQ */
+.faq {
+  max-width: var(--largura-max);
+  margin: 0 auto;
+  padding: 4.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.faq__cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.faq__cabecalho p {
+  font-size: 1.25rem;
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.filtro {
+  padding: 0.75rem 1.125rem;
+  border: 2px solid var(--cor-borda-forte);
+  border-radius: 62.4rem;
+  background: var(--cor-branco);
+  color: var(--cor-texto);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filtro--ativo {
+  background: var(--cor-principal);
+  border-color: var(--cor-principal);
+  color: var(--cor-branco);
+}
+
+.faq__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.faq .pergunta {
+  border-radius: 1.125rem;
+}
+
+.pergunta__textos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.pergunta__tema {
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cor-principal);
+}
+
+/* Usado pelo filtro em JavaScript para esconder perguntas */
+.escondido {
+  display: none;
+}
+
+/* 9. Integrantes */
+.equipe {
+  max-width: var(--largura-max);
+  margin: 0 auto;
+  padding: 4.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+}
+
+.equipe__cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.equipe__cabecalho p {
+  font-size: 1.25rem;
+}
+
+.equipe__lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.integrante {
+  flex: 0 0 calc((100% - 3.75rem) / 4);   /* 4 cards por linha (3 espaços de 1.25rem) */
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.875rem;
+  text-align: center;
+  background: var(--cor-branco);
+  border: 1px solid var(--cor-borda);
+  border-radius: 1.375rem;
+}
+
+.integrante__foto {
+  width: 7rem;
+  height: 7rem;
+  object-fit: cover;
+  border-radius: 50%;
+  background: var(--cor-principal-clara);
+}
+
+.integrante__dados {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.integrante__nome {
+  font-size: 1.0625rem;
+}
+
+.integrante__rm {
+  font-size: 1rem;
+  color: var(--cor-texto-apoio);
+}
+
+.integrante__funcao {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cor-principal);
+}
+
+.integrante__links {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  gap: 0.625rem;
+}
+
+.integrante__links a {
+  display: block;
+  padding: 0.625rem 1rem;
+  border: 2px solid var(--cor-principal);
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.integrante__links .link-github {
+  background: var(--cor-principal);
+  color: var(--cor-branco);
+}
+
+.integrante__links .link-linkedin {
+  background: var(--cor-branco);
+  color: var(--cor-principal);
+}
+
+/* 10. Contato */
+.contato {
+  max-width: var(--largura-max);
+  margin: 0 auto;
+  padding: 4.5rem 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 2.5rem;
+}
+
+.contato__info {
+  flex: 1 1 20rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.contato__info > p {
+  font-size: 1.25rem;
+}
+
+.contato__dados {
+  margin: 0;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--cor-principal-clara);
+  border-radius: 1.25rem;
+}
+
+.contato__dados dt {
+  font-weight: 700;
+}
+
+.contato__dados dd {
+  margin: 0 0 0.5rem;
+  color: var(--cor-texto-suave);
+}
+
+.formulario {
+  flex: 1 1 32.5rem;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background: var(--cor-branco);
+  border: 1px solid var(--cor-borda);
+  border-radius: 1.5rem;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-weight: 700;
+}
+
+.campo__entrada {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--cor-borda-forte);
+  border-radius: 0.75rem;
+  background: var(--cor-branco);
+  color: var(--cor-texto);
+  font: inherit;
+  font-weight: 400;
+}
+
+textarea.campo__entrada {
+  resize: vertical;
+}
+
+.formulario .botao {
+  align-self: flex-start;
+  padding: 1rem 2rem;
+}
