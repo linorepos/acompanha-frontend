@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sobre o projeto — Acompanha</title>
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Montserrat:wght@800&amp;family=Atkinson+Hyperlegible:wght@400;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="cabecalho">
+    <div class="cabecalho__conteudo">
+      <a class="cabecalho__logo" href="index.html">
+        <img src="assets/images/logo-acompanha@1x.png"
+             srcset="assets/images/logo-acompanha@1x.png 1x, assets/images/logo-acompanha@2x.png 2x, assets/images/logo-acompanha@3x.png 3x"
+             alt="Acompanha — início" width="193" height="32">
+      </a>
+      <nav aria-label="Menu principal">
+        <ul class="menu">
+          <li><a class="menu__link" href="index.html">Início</a></li>
+          <li><a class="menu__link menu__link--ativo" href="sobre.html" aria-current="page">Sobre</a></li>
+          <li><a class="menu__link" href="painel.html">Painel da família</a></li>
+          <li><a class="menu__link" href="faq.html">FAQ</a></li>
+          <li><a class="menu__link" href="integrantes.html">Integrantes</a></li>
+          <li><a class="menu__link" href="contato.html">Contato</a></li>
+          <li><a class="menu__link menu__link--destaque" href="assistente.html">Testar o assistente</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="apresentacao" aria-labelledby="titulo-pagina">
+      <p class="sobretitulo">Sobre o projeto</p>
+      <h1 class="titulo-pagina" id="titulo-pagina">Tecnologia que fala a língua de quem mais precisa de cuidado.</h1>
+      <p class="texto-destaque">O Acompanha é um assistente por voz que ajuda idosos que moram sozinhos a seguir o tratamento, e mantém a família por perto mesmo à distância.</p>
+    </section>
+
+    <section class="pilares" aria-label="Problema, objetivo e proposta">
+      <article class="pilar pilar--alerta">
+        <p class="pilar__rotulo">O problema</p>
+        <h2 class="pilar__titulo">Remédio esquecido, família sem saber</h2>
+        <p class="texto-suave">Idosos que moram sozinhos costumam tomar vários remédios por dia. Esquecer uma dose ou repetir outra é comum. Apps de lembrete exigem boa visão, coordenação motora e memória, e a família só descobre quando algo já deu errado.</p>
+      </article>
+      <article class="pilar">
+        <p class="pilar__rotulo">O objetivo</p>
+        <h2 class="pilar__titulo">Autonomia para o idoso, tranquilidade para a família</h2>
+        <p class="texto-suave">Garantir que cada dose seja lembrada e confirmada sem que o idoso precise aprender um app novo, e avisar a família no momento certo, antes que o esquecimento vire um problema.</p>
+      </article>
+      <article class="pilar pilar--destaque">
+        <p class="pilar__rotulo">A proposta</p>
+        <h2 class="pilar__titulo">Conversar em vez de clicar</h2>
+        <p class="texto-suave">O idoso recebe áudios no Telegram e responde falando. O assistente entende a resposta, registra a confirmação e, se não houver resposta ou ela for estranha, aciona o familiar. A família configura tudo por um painel simples.</p>
+      </article>
+    </section>
+
+    <section class="faixa-branca" aria-labelledby="titulo-publico">
+      <div class="secao publico">
+        <h2 class="titulo-secao" id="titulo-publico">Para quem é</h2>
+        <div class="publico__lista">
+          <article class="publico__item">
+            <h3>Idoso</h3>
+            <p class="texto-suave">Recebe lembretes por áudio, confirma falando e pode pedir ajuda a qualquer momento.</p>
+          </article>
+          <article class="publico__item">
+            <h3>Familiar ou cuidador</h3>
+            <p class="texto-suave">Cadastra remédios e consultas, recebe alertas e acompanha o histórico da semana.</p>
+          </article>
+          <article class="publico__item">
+            <h3>Unidade de saúde</h3>
+            <p class="texto-suave">Tem as consultas lembradas e confirmadas, reduzindo faltas e retornos perdidos.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="secao tecnologias" aria-labelledby="titulo-tecnologias">
+      <h2 class="titulo-secao" id="titulo-tecnologias">Como a solução é construída</h2>
+      <ul class="tecnologias__lista">
+        <li class="tecnologia">
+          <strong>Telegram</strong>
+          <span>Canal de voz e texto que o idoso já tem no celular.</span>
+        </li>
+        <li class="tecnologia">
+          <strong>Node-RED</strong>
+          <span>Orquestra as mensagens, o áudio (fala ↔ texto) e os alertas.</span>
+        </li>
+        <li class="tecnologia">
+          <strong>IBM watsonx Assistant</strong>
+          <span>Chatbot com 5 intenções e 5 entidades, no Webchat e no Telegram.</span>
+        </li>
+        <li class="tecnologia">
+          <strong>Java + Python</strong>
+          <span>Regras de negócio: confirmações, atrasos, alertas e histórico.</span>
+        </li>
+        <li class="tecnologia">
+          <strong>Site</strong>
+          <span>HTML, CSS e JavaScript: apresentação, painel da família e Webchat.</span>
+        </li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    <div class="rodape__conteudo">
+      <img class="rodape__logo" src="assets/images/logo-texto-branco.png" alt="Acompanha" width="186" height="30">
+      <p class="rodape__texto">Projeto CitizenTech · Global Solution FIAP 2026 · 1TDSPR</p>
+      <ul class="rodape__links">
+        <li><a href="integrantes.html">Integrantes</a></li>
+        <li><a href="contato.html">Contato</a></li>
+        <li><a href="https://github.com/linorepos/acompanha-frontend" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
