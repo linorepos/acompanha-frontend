@@ -34,7 +34,92 @@
 
   <main>
     <section class="faq" aria-labelledby="titulo-pagina">
-      <h1 class="titulo-pagina" id="titulo-pagina">Perguntas frequentes</h1>
+      <div class="faq__cabecalho">
+        <h1 class="titulo-pagina" id="titulo-pagina">Perguntas frequentes</h1>
+        <p class="texto-suave">Escolha um tema ou abra uma pergunta. Não achou o que procurava? <a href="contato.html">Fale com a gente</a>.</p>
+      </div>
+
+      <div class="filtros" aria-label="Filtrar por tema">
+        <button type="button" class="filtro filtro--ativo" data-tema="todos">Todos</button>
+        <button type="button" class="filtro" data-tema="idoso">Para o idoso</button>
+        <button type="button" class="filtro" data-tema="familia">Para a família</button>
+        <button type="button" class="filtro" data-tema="projeto">Sobre o projeto</button>
+      </div>
+
+      <div class="faq__lista">
+        <details class="pergunta" name="faq" data-tema="idoso" open>
+          <summary class="pergunta__titulo">
+            <span class="pergunta__textos">
+              <span class="pergunta__tema">Para o idoso</span>
+              <span>O idoso precisa saber usar celular?</span>
+            </span>
+          </summary>
+          <p class="pergunta__resposta">Não. Ele só ouve os áudios e responde falando. Quem configura tudo é o familiar ou cuidador, pelo painel.</p>
+        </details>
+        <details class="pergunta" name="faq" data-tema="idoso">
+          <summary class="pergunta__titulo">
+            <span class="pergunta__textos">
+              <span class="pergunta__tema">Para o idoso</span>
+              <span>E se ele tiver dificuldade para enxergar ou mexer as mãos?</span>
+            </span>
+          </summary>
+          <p class="pergunta__resposta">Toda a conversa pode ser feita por voz, sem botões pequenos e sem digitar.</p>
+        </details>
+        <details class="pergunta" name="faq" data-tema="idoso">
+          <summary class="pergunta__titulo">
+            <span class="pergunta__textos">
+              <span class="pergunta__tema">Para o idoso</span>
+              <span>Funciona para quem tem Alzheimer ou demência?</span>
+            </span>
+          </summary>
+          <p class="pergunta__resposta">O sistema não depende da memória do idoso: pergunta, confirma e registra. Respostas confusas ou repetidas também geram aviso para a família.</p>
+        </details>
+        <details class="pergunta" name="faq" data-tema="familia">
+          <summary class="pergunta__titulo">
+            <span class="pergunta__textos">
+              <span class="pergunta__tema">Para a família</span>
+              <span>E se ele não responder ao lembrete?</span>
+            </span>
+          </summary>
+          <p class="pergunta__resposta">O assistente tenta de novo e, sem confirmação em 30 minutos, envia um alerta para o familiar cadastrado.</p>
+        </details>
+        <details class="pergunta" name="faq" data-tema="familia">
+          <summary class="pergunta__titulo">
+            <span class="pergunta__textos">
+              <span class="pergunta__tema">Para a família</span>
+              <span>Posso cadastrar mais de um familiar?</span>
+            </span>
+          </summary>
+          <p class="pergunta__resposta">Sim. Vários familiares ou cuidadores podem receber os alertas e ver o histórico.</p>
+        </details>
+        <details class="pergunta" name="faq" data-tema="familia">
+          <summary class="pergunta__titulo">
+            <span class="pergunta__textos">
+              <span class="pergunta__tema">Para a família</span>
+              <span>Consigo ver se ele está esquecendo mais?</span>
+            </span>
+          </summary>
+          <p class="pergunta__resposta">Sim. O painel mostra o histórico da semana e destaca os dias com doses não confirmadas.</p>
+        </details>
+        <details class="pergunta" name="faq" data-tema="projeto">
+          <summary class="pergunta__titulo">
+            <span class="pergunta__textos">
+              <span class="pergunta__tema">Sobre o projeto</span>
+              <span>Preciso instalar algum aplicativo?</span>
+            </span>
+          </summary>
+          <p class="pergunta__resposta">Só o Telegram, que é gratuito. O painel da família funciona direto no navegador.</p>
+        </details>
+        <details class="pergunta" name="faq" data-tema="projeto">
+          <summary class="pergunta__titulo">
+            <span class="pergunta__textos">
+              <span class="pergunta__tema">Sobre o projeto</span>
+              <span>Quem desenvolveu o Acompanha?</span>
+            </span>
+          </summary>
+          <p class="pergunta__resposta">Um grupo de alunos do 1º ano de Análise e Desenvolvimento de Sistemas da FIAP, como projeto da Global Solution 2026.</p>
+        </details>
+      </div>
     </section>
   </main>
 
