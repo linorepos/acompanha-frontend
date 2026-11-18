@@ -2,3 +2,11 @@
 Thumbs.db
 .vscode/
 .idea/
+
+# Segredos e banco local do chatbot: nunca versionar
+.env
+*_cred.json
+flows_cred.json
+*.key
+*.db
+API_KEYS*.txt
