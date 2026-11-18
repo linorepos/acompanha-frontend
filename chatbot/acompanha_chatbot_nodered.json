@@ -1,0 +1,2842 @@
+[
+  {
+    "id": "tab_acompanha",
+    "type": "tab",
+    "label": "Acompanha - Chatbot (texto + voz)",
+    "disabled": false,
+    "info": "Assistente por voz para idosos que moram sozinhos (Global Solution 2026/2 - FIAP).\nTelegram (texto ou áudio) e Webchat -> Node-RED -> Whisper (Groq) -> LLM (Groq) classifica a intenção e extrai as entidades em JSON {intencao, entidades, resposta} -> contexto por chat_id -> resposta em texto + voz (Gemini TTS).\nLembretes de remédio a cada minuto e alerta à família quando não há confirmação em MINUTOS_ALERTA.\nBaseado no fluxo 'Chatbot RAG + Voz (v4)' da disciplina. Desative a aba v4 antes do Deploy se usar o mesmo bot.",
+    "env": [
+      {
+        "name": "STT_MODEL",
+        "value": "whisper-large-v3-turbo",
+        "type": "str"
+      },
+      {
+        "name": "TTS_MODEL",
+        "value": "gemini-3.8-flash-tts",
+        "type": "str"
+      },
+      {
+        "name": "TTS_VOZ",
+        "value": "Kore",
+        "type": "str"
+      },
+      {
+        "name": "TTS_MAX_CARACTERES",
+        "value": "400",
+        "type": "str"
+      },
+      {
+        "name": "MINUTOS_ALERTA",
+        "value": "30",
+        "type": "str"
+      },
+      {
+        "name": "WEBCHAT_USUARIO",
+        "value": "1",
+        "type": "str"
+      },
+      {
+        "name": "FUSO",
+        "value": "America/Sao_Paulo",
+        "type": "str"
+      }
+    ]
+  },
+  {
+    "id": "ac_c0",
+    "type": "comment",
+    "name": "0) PREPARAÇÃO: cria o banco acompanha.db com dados de demonstração (não apaga nada)",
+    "info": "Rode 'Criar / atualizar banco' uma vez depois do Deploy.\nDados de exemplo: Dona Maria (usuário 1, idosa), Ana (usuário 2, filha), 3 remédios, 1 consulta na UBS.\nPara a demo no Telegram: edite 'Ligar meu Telegram' com o seu ID (o bot mostra o ID quando você não está cadastrado).\nErro de certificado? Abra o Node-RED com NODE_OPTIONS=--use-system-ca (igual ao fluxo da aula).",
+    "x": 330,
+    "y": 40,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_inj_setup",
+    "type": "inject",
+    "name": "Criar / atualizar banco",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 90,
+    "wires": [
+      [
+        "ac_f_setup"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_setup",
+    "type": "function",
+    "name": "Tabelas + dados de exemplo",
+    "func": "// Cria as tabelas que faltarem e insere os dados de demonstração (INSERT OR IGNORE: não duplica nem apaga)\nmsg.topic = `\nCREATE TABLE IF NOT EXISTS usuarios (\n  id          INTEGER PRIMARY KEY,\n  telegram_id INTEGER UNIQUE,\n  nome        TEXT NOT NULL,\n  perfil      TEXT NOT NULL CHECK (perfil IN ('idoso', 'familiar')),\n  idoso_id    INTEGER REFERENCES usuarios(id),   -- familiar: de qual idoso ele cuida\n  parentesco  TEXT,\n  ativo       INTEGER DEFAULT 1\n);\nCREATE TABLE IF NOT EXISTS unidades (\n  id       INTEGER PRIMARY KEY,\n  nome     TEXT NOT NULL,\n  endereco TEXT,\n  telefone TEXT\n);\nCREATE TABLE IF NOT EXISTS medicamentos (\n  id       INTEGER PRIMARY KEY,\n  idoso_id INTEGER NOT NULL REFERENCES usuarios(id),\n  nome     TEXT NOT NULL,\n  dose     TEXT,\n  horario  TEXT NOT NULL,                         -- HH:MM\n  ativo    INTEGER DEFAULT 1\n);\nCREATE TABLE IF NOT EXISTS doses (\n  id             INTEGER PRIMARY KEY AUTOINCREMENT,\n  medicamento_id INTEGER NOT NULL REFERENCES medicamentos(id),\n  data           TEXT NOT NULL,\n  horario        TEXT NOT NULL,\n  status         TEXT NOT NULL DEFAULT 'pendente' CHECK (status IN ('pendente', 'confirmada', 'alertada')),\n  enviado_em     TEXT,\n  confirmado_em  TEXT,\n  UNIQUE (medicamento_id, data, horario)\n);\nCREATE TABLE IF NOT EXISTS consultas (\n  id            INTEGER PRIMARY KEY,\n  idoso_id      INTEGER NOT NULL REFERENCES usuarios(id),\n  unidade_id    INTEGER REFERENCES unidades(id),\n  data          TEXT NOT NULL,\n  hora          TEXT,\n  especialidade TEXT\n);\nCREATE TABLE IF NOT EXISTS alertas (\n  id        INTEGER PRIMARY KEY AUTOINCREMENT,\n  idoso_id  INTEGER NOT NULL REFERENCES usuarios(id),\n  tipo      TEXT,\n  mensagem  TEXT,\n  criado_em TEXT DEFAULT (datetime('now', 'localtime'))\n);\n-- Quem foi avisado de cada alerta e quando (escalonamento: 1 linha por familiar avisado, ordem = ordem de cadastro)\nCREATE TABLE IF NOT EXISTS alertas_envios (\n  id          INTEGER PRIMARY KEY AUTOINCREMENT,\n  alerta_id   INTEGER NOT NULL REFERENCES alertas(id),\n  idoso_id    INTEGER NOT NULL REFERENCES usuarios(id),\n  familiar_id INTEGER NOT NULL REFERENCES usuarios(id),\n  ordem       INTEGER NOT NULL,\n  enviado_em  TEXT DEFAULT (datetime('now', 'localtime')),\n  visto_em    TEXT,\n  UNIQUE (alerta_id, familiar_id)\n);\nINSERT OR IGNORE INTO usuarios VALUES (1, 111111111, 'Dona Maria', 'idoso', NULL, NULL, 1);\nINSERT OR IGNORE INTO usuarios VALUES (2, 222222222, 'Ana', 'familiar', 1, 'filha', 1);\nINSERT OR IGNORE INTO unidades VALUES (1, 'UBS Vila Esperança', 'Rua das Flores, 120', '(11) 3000-0000');\nINSERT OR IGNORE INTO medicamentos VALUES (1, 1, 'Losartana', '50 mg, 1 comprimido', '08:00', 1);\nINSERT OR IGNORE INTO medicamentos VALUES (2, 1, 'Metformina', '850 mg, 1 comprimido', '12:30', 1);\nINSERT OR IGNORE INTO medicamentos VALUES (3, 1, 'Sinvastatina', '20 mg, 1 comprimido', '20:00', 1);\nINSERT OR IGNORE INTO consultas VALUES (1, 1, 1, date('now', 'localtime', '+3 days'), '09:30', 'Cardiologista');\n`;\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 350,
+    "y": 90,
+    "wires": [
+      [
+        "ac_sql_setup"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_sql_setup",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "batch",
+    "sql": "",
+    "name": "SQLite (batch)",
+    "x": 560,
+    "y": 90,
+    "wires": [
+      [
+        "ac_dbg_setup"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_dbg_setup",
+    "type": "debug",
+    "name": "Banco pronto",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 730,
+    "y": 90,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_inj_ligar",
+    "type": "inject",
+    "name": "Ligar meu Telegram (edite!)",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "{\"usuario_id\": 1, \"telegram_id\": 999999999}",
+    "payloadType": "json",
+    "x": 160,
+    "y": 140,
+    "wires": [
+      [
+        "ac_chg_ligar"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_chg_ligar",
+    "type": "change",
+    "name": "msg.params",
+    "rules": [
+      {
+        "t": "set",
+        "p": "params",
+        "pt": "msg",
+        "to": "{\"$id\": payload.usuario_id, \"$tg\": payload.telegram_id}",
+        "tot": "jsonata"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 380,
+    "y": 140,
+    "wires": [
+      [
+        "ac_sql_ligar"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_sql_ligar",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "prepared",
+    "sql": "UPDATE usuarios SET telegram_id = $tg WHERE id = $id",
+    "name": "UPDATE telegram_id",
+    "x": 570,
+    "y": 140,
+    "wires": [
+      [
+        "ac_dbg_ligar"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_dbg_ligar",
+    "type": "debug",
+    "name": "Telegram ligado",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "params",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 750,
+    "y": 140,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_inj_cad",
+    "type": "inject",
+    "name": "Cadastrar familiar (edite!)",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "{\"telegram_id\": 999999999, \"nome\": \"Seu Nome\", \"perfil\": \"familiar\", \"idoso_id\": 1, \"parentesco\": \"neto\"}",
+    "payloadType": "json",
+    "x": 160,
+    "y": 190,
+    "wires": [
+      [
+        "ac_chg_cad"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_chg_cad",
+    "type": "change",
+    "name": "msg.params",
+    "rules": [
+      {
+        "t": "set",
+        "p": "params",
+        "pt": "msg",
+        "to": "{\"$tg\": payload.telegram_id, \"$nome\": payload.nome, \"$perfil\": payload.perfil, \"$idoso\": payload.idoso_id, \"$par\": payload.parentesco}",
+        "tot": "jsonata"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 380,
+    "y": 190,
+    "wires": [
+      [
+        "ac_sql_cad"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_sql_cad",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "prepared",
+    "sql": "INSERT INTO usuarios (telegram_id, nome, perfil, idoso_id, parentesco, ativo) VALUES ($tg, $nome, $perfil, $idoso, $par, 1) ON CONFLICT(telegram_id) DO UPDATE SET nome = excluded.nome, perfil = excluded.perfil, idoso_id = excluded.idoso_id, parentesco = excluded.parentesco, ativo = 1",
+    "name": "INSERT usuário",
+    "x": 570,
+    "y": 190,
+    "wires": [
+      [
+        "ac_dbg_cad"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_dbg_cad",
+    "type": "debug",
+    "name": "Cadastro ok",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "params",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 740,
+    "y": 190,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_c1",
+    "type": "comment",
+    "name": "1) ATENDIMENTO: texto ou áudio -> (Whisper) -> dados do idoso + contexto -> LLM (intenção, entidades, resposta) -> ação -> texto + voz",
+    "info": "",
+    "x": 470,
+    "y": 260,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_tg_in",
+    "type": "telegram receiver",
+    "name": "Telegram (entrada)",
+    "bot": "ac_bot",
+    "saveDataDir": "",
+    "filterCommands": false,
+    "x": 140,
+    "y": 310,
+    "wires": [
+      [
+        "ac_f_extrai"
+      ],
+      []
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_t1",
+    "type": "inject",
+    "name": "Teste: lembrete_remedio",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "teste",
+        "v": "true",
+        "vt": "bool"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "{\"chatId\": 111111111, \"usuario\": 1, \"type\": \"message\", \"content\": \"Que remédio eu tomo agora?\"}",
+    "payloadType": "json",
+    "x": 160,
+    "y": 360,
+    "wires": [
+      [
+        "ac_f_extrai"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_t2",
+    "type": "inject",
+    "name": "Teste: confirmar_medicacao",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "teste",
+        "v": "true",
+        "vt": "bool"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "{\"chatId\": 111111111, \"usuario\": 1, \"type\": \"message\", \"content\": \"Já tomei\"}",
+    "payloadType": "json",
+    "x": 160,
+    "y": 400,
+    "wires": [
+      [
+        "ac_f_extrai"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_t3",
+    "type": "inject",
+    "name": "Teste: consulta",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "teste",
+        "v": "true",
+        "vt": "bool"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "{\"chatId\": 111111111, \"usuario\": 1, \"type\": \"message\", \"content\": \"Quando é a minha consulta e onde fica o posto?\"}",
+    "payloadType": "json",
+    "x": 160,
+    "y": 440,
+    "wires": [
+      [
+        "ac_f_extrai"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_t4",
+    "type": "inject",
+    "name": "Teste: pedir_ajuda",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "teste",
+        "v": "true",
+        "vt": "bool"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "{\"chatId\": 111111111, \"usuario\": 1, \"type\": \"message\", \"content\": \"Preciso de ajuda, tô com tontura\"}",
+    "payloadType": "json",
+    "x": 160,
+    "y": 480,
+    "wires": [
+      [
+        "ac_f_extrai"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_t5",
+    "type": "inject",
+    "name": "Teste: falar_familiar",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "teste",
+        "v": "true",
+        "vt": "bool"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "{\"chatId\": 111111111, \"usuario\": 1, \"type\": \"message\", \"content\": \"Quero falar com a minha filha\"}",
+    "payloadType": "json",
+    "x": 160,
+    "y": 520,
+    "wires": [
+      [
+        "ac_f_extrai"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_extrai",
+    "type": "function",
+    "name": "Extrai dados (texto ou voz)",
+    "func": "// Entrada do Telegram (ou dos injects de teste): texto, mensagem de voz ou arquivo de áudio\nconst p = msg.payload || {};\nconst tipo = p.type;\nif (!['message', 'voice', 'audio'].includes(tipo)) return null;   // fotos, figurinhas etc. são ignoradas\nmsg.canal = 'telegram';\nmsg.chatId = p.chatId;\nmsg.userId = (msg.originalMessage && msg.originalMessage.from) ? msg.originalMessage.from.id : p.chatId;\n// Busca pelo ID do Telegram. Nos testes (sem Telegram) busca direto pelo id interno do usuário.\nmsg.params = (msg.teste && p.usuario) ? { $tg: -1, $uid: p.usuario } : { $tg: msg.userId, $uid: -1 };\nif (tipo === 'message') {\n    if (!p.content) return null;\n    msg.pergunta = String(p.content).trim();\n    msg.entradaVoz = false;\n} else {\n    msg.entradaVoz = true;\n    msg.audioUrl = p.weblink;          // link temporário do Telegram (contém o token do bot: não exiba em debug)\n    const a = msg.originalMessage && msg.originalMessage.audio;\n    msg.audioNome = tipo === 'voice' ? 'voz.ogg' : ((a && a.file_name) || 'audio.mp3');\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 330,
+    "wires": [
+      [
+        "ac_sql_user"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_sql_user",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "prepared",
+    "sql": "SELECT id, nome, perfil, idoso_id, parentesco FROM usuarios WHERE ativo = 1 AND (telegram_id = $tg OR id = $uid)",
+    "name": "Busca usuário",
+    "x": 620,
+    "y": 330,
+    "wires": [
+      [
+        "ac_f_auth"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_auth",
+    "type": "function",
+    "name": "Usuário cadastrado?",
+    "func": "// Saída 1 = usuário encontrado | Saída 2 = não cadastrado (responde com o ID para a família cadastrar)\nconst rows = Array.isArray(msg.payload) ? msg.payload : [];\nif (rows.length === 0) {\n    msg.resposta = 'Olá! Ainda não conheço você. Peça para sua família cadastrar este número no Acompanha: ' + msg.userId;\n    node.status({ fill: 'red', shape: 'dot', text: 'não cadastrado: ' + msg.userId });\n    return [null, msg];\n}\nmsg.usuario = rows[0];\n// O familiar conversa sobre o idoso de quem cuida; o idoso, sobre ele mesmo\nmsg.idosoId = msg.usuario.perfil === 'idoso' ? msg.usuario.id : msg.usuario.idoso_id;\nnode.status({ fill: 'green', shape: 'dot', text: msg.usuario.nome + ' (' + msg.usuario.perfil + ')' });\nreturn [msg, null];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 820,
+    "y": 330,
+    "wires": [
+      [
+        "ac_f_roteia"
+      ],
+      [
+        "ac_f_envio"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_roteia",
+    "type": "function",
+    "z": "tab_acompanha",
+    "name": "Texto ou voz?",
+    "func": "// Saída 1 = texto | Saída 2 = baixar o áudio do Telegram | Saída 3 = áudio já disponível (testes) | Saída 4 = erro\nif (!msg.entradaVoz) return [msg, null, null, null];\nif (Buffer.isBuffer(msg.audio)) return [null, null, msg, null];\nif (msg.audioUrl) return [null, msg, null, null];\nmsg.resposta = 'Não recebi o áudio. Pode enviar de novo?';\nreturn [null, null, null, msg];",
+    "outputs": 4,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1010,
+    "y": 330,
+    "wires": [
+      [
+        "ac_f_dados"
+      ],
+      [
+        "ac_chg_url"
+      ],
+      [
+        "ac_call_stt"
+      ],
+      [
+        "ac_f_envio"
+      ]
+    ]
+  },
+  {
+    "id": "ac_chg_url",
+    "type": "change",
+    "z": "tab_acompanha",
+    "name": "URL do áudio",
+    "rules": [
+      {
+        "t": "set",
+        "p": "url",
+        "pt": "msg",
+        "to": "audioUrl",
+        "tot": "msg"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 420,
+    "y": 590,
+    "wires": [
+      [
+        "ac_http_baixa"
+      ]
+    ]
+  },
+  {
+    "id": "ac_http_baixa",
+    "type": "http request",
+    "z": "tab_acompanha",
+    "name": "Baixa o áudio do Telegram",
+    "method": "GET",
+    "ret": "bin",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 630,
+    "y": 590,
+    "wires": [
+      [
+        "ac_chg_audio"
+      ]
+    ]
+  },
+  {
+    "id": "ac_chg_audio",
+    "type": "change",
+    "z": "tab_acompanha",
+    "name": "Guarda o áudio",
+    "rules": [
+      {
+        "t": "set",
+        "p": "audio",
+        "pt": "msg",
+        "to": "payload",
+        "tot": "msg"
+      },
+      {
+        "t": "delete",
+        "p": "url",
+        "pt": "msg"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 840,
+    "y": 590,
+    "wires": [
+      [
+        "ac_call_stt"
+      ]
+    ]
+  },
+  {
+    "id": "ac_call_stt",
+    "type": "link call",
+    "z": "tab_acompanha",
+    "name": "Transcrever (STT)",
+    "links": [
+      "ac_lin_stt"
+    ],
+    "linkType": "static",
+    "timeout": "30",
+    "x": 1030,
+    "y": 590,
+    "wires": [
+      [
+        "ac_sw_entendeu"
+      ]
+    ]
+  },
+  {
+    "id": "ac_sw_entendeu",
+    "type": "switch",
+    "z": "tab_acompanha",
+    "name": "Entendeu o áudio?",
+    "property": "pergunta",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "nempty"
+      },
+      {
+        "t": "else"
+      }
+    ],
+    "checkall": "false",
+    "repair": false,
+    "outputs": 2,
+    "x": 1220,
+    "y": 590,
+    "wires": [
+      [
+        "ac_f_dados"
+      ],
+      [
+        "ac_chg_naoent"
+      ]
+    ]
+  },
+  {
+    "id": "ac_chg_naoent",
+    "type": "change",
+    "z": "tab_acompanha",
+    "name": "Mensagem de erro do áudio",
+    "rules": [
+      {
+        "t": "set",
+        "p": "resposta",
+        "pt": "msg",
+        "to": "erroStt ? \"Não consegui transcrever o áudio agora. Tente de novo em instantes ou escreva a pergunta.\" : \"Não consegui entender o áudio. Pode repetir ou escrever a pergunta?\"",
+        "tot": "jsonata"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 1440,
+    "y": 630,
+    "wires": [
+      [
+        "ac_f_envio"
+      ]
+    ]
+  },
+  {
+    "id": "ac_f_dados",
+    "type": "function",
+    "name": "Parâmetros do idoso",
+    "func": "// Prepara a consulta que traz tudo o que a IA precisa saber sobre o idoso\nmsg.params = { $idoso: msg.idosoId };\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1230,
+    "y": 330,
+    "wires": [
+      [
+        "ac_sql_dados"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_sql_dados",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "prepared",
+    "sql": "SELECT\n  (SELECT nome FROM usuarios WHERE id = $idoso) AS idoso_nome,\n  (SELECT json_group_array(json_object('nome', nome, 'dose', dose, 'horario', horario))\n     FROM medicamentos WHERE idoso_id = $idoso AND ativo = 1) AS remedios,\n  (SELECT json_group_array(json_object('remedio', m.nome, 'horario', d.horario, 'status', d.status))\n     FROM doses d JOIN medicamentos m ON m.id = d.medicamento_id\n    WHERE m.idoso_id = $idoso AND d.data = date('now', 'localtime')) AS doses_hoje,\n  (SELECT json_group_array(json_object('data', c.data, 'hora', c.hora, 'especialidade', c.especialidade,\n                                       'unidade', u.nome, 'endereco', u.endereco, 'telefone', u.telefone))\n     FROM consultas c LEFT JOIN unidades u ON u.id = c.unidade_id\n    WHERE c.idoso_id = $idoso AND c.data >= date('now', 'localtime')) AS consultas,\n  (SELECT json_group_array(json_object('nome', nome, 'parentesco', parentesco))\n     FROM usuarios WHERE idoso_id = $idoso AND perfil = 'familiar' AND ativo = 1) AS familiares,\n  (SELECT json_group_array(json_object('data', data, 'total', total, 'confirmadas', confirmadas))\n     FROM (SELECT d.data, COUNT(*) AS total, SUM(d.status = 'confirmada') AS confirmadas\n             FROM doses d JOIN medicamentos m ON m.id = d.medicamento_id\n            WHERE m.idoso_id = $idoso AND d.data >= date('now', 'localtime', '-6 days')\n            GROUP BY d.data)) AS semana",
+    "name": "Dados do idoso (JSON)",
+    "x": 1430,
+    "y": 330,
+    "wires": [
+      [
+        "ac_f_monta"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_monta",
+    "type": "function",
+    "name": "Monta prompt (catálogo + dados + contexto)",
+    "func": "// Monta o prompt do LLM: catálogo de intenções/entidades + dados do idoso + variável de contexto da conversa\nconst cat = flow.get('catalogo');\nconst linha = (Array.isArray(msg.payload) && msg.payload[0]) || {};\nconst lista = s => { try { return JSON.parse(s || '[]'); } catch (e) { return []; } };\nmsg.dados = {\n    idoso: linha.idoso_nome || '',\n    remedios: lista(linha.remedios),\n    doses_hoje: lista(linha.doses_hoje),\n    consultas: lista(linha.consultas),\n    familiares: lista(linha.familiares),\n    semana: lista(linha.semana)\n};\n\n// VARIÁVEL DE CONTEXTO: o que já aconteceu nesta conversa, guardado por chat_id\nconst contextos = flow.get('contextos') || {};\nmsg.contexto = contextos[msg.chatId] || { historico: [] };\nconst c = msg.contexto;\n\nconst fuso = env.get('FUSO') || 'America/Sao_Paulo';\nconst agora = new Date();\nconst quando = agora.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', timeZone: fuso }) +\n               ', ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: fuso });\n\nconst intencoes = Object.entries(cat.intencoes).map(([nome, i]) =>\n    '- ' + nome + ': ' + i.descricao + '. Exemplos: ' + i.exemplos.map(e => '\"' + e + '\"').join(', ')).join('\\n');\nconst entidades = Object.entries(cat.entidades).map(([nome, e]) =>\n    '- ' + nome + ': ' + e.descricao + '. Valores e sinônimos: ' +\n    Object.entries(e.sinonimos).map(([v, s]) => v + (s.length ? ' (' + s.join(', ') + ')' : '')).join('; ')).join('\\n');\n\nmsg.sistema = `Você é o Acompanha, um assistente por voz para idosos que moram sozinhos. Também conversa com os familiares que cuidam deles.\nREGRAS DA RESPOSTA:\n- Português do Brasil, frases curtas e simples, no máximo 3 frases. Tom carinhoso e calmo. Chame a pessoa pelo nome.\n- A resposta será lida em voz alta: não use emojis, listas, markdown nem abreviações.\n- Use SOMENTE os DADOS informados. Nunca invente remédio, dose, horário, data ou endereço. Se não souber, diga que vai pedir para a família verificar. Nunca diga que um remédio foi tomado se ele não aparecer como confirmada em DOSES DE HOJE: remédio de horário já passado e sem registro, diga que não há registro de que foi tomado.\n- Nunca dê orientação médica (não mande tomar dose extra, trocar ou parar remédio).\n- pedir_ajuda: diga que a família está sendo avisada agora e, se for grave, que ligue 192 (SAMU).\n- falar_familiar: diga que vai mandar o recado para a família.\n- confirmar_medicacao: se tomou, agradeça e diga que anotou (o sistema registra a dose). Descubra o remédio assim: (1) o que ela citou; (2) senão, o remédio com dose pendente em DOSES DE HOJE; (3) senão, o remédio cujo horário esteja entre 1 hora antes e 1 hora depois de DATA E HORA. Se achar, diga o nome dele e que anotou, sem perguntar nada. Só pergunte qual remédio ela tomou se nenhum desses se encaixar. Se ainda não tomou, diga que tudo bem e que vai lembrar de novo.\n- Se quem fala é um familiar, responda sobre o idoso de quem ele cuida (pode usar o resumo da semana). O familiar já é da família: nunca diga que vai avisar a família. Sobre doses, diga só o que consta em DOSES DE HOJE: confirmada = já tomou; pendente ou alertada = ainda não tomou; sem registros = ainda não houve lembrete hoje.\n\nCLASSIFIQUE a mensagem em UMA intenção:\n${intencoes}\n- outro: saudações, agradecimentos ou assuntos fora do escopo (responda com gentileza e diga em que pode ajudar).\n\nEXTRAIA as entidades (use null quando não aparecerem):\n${entidades}\nNo campo medicamento, use o nome do remédio cadastrado quando der para saber qual é.\n\nUse o CONTEXTO DA CONVERSA para entender referências: \"já tomei\" sem dizer o remédio = o remédio que está aguardando confirmação ou o último citado.\n\nResponda APENAS com um JSON válido, sem nenhum texto antes ou depois:\n{\"intencao\": \"...\", \"entidades\": {\"medicamento\": null, \"horario\": null, \"dia\": null, \"familiar\": null, \"unidade_saude\": null}, \"confirmou\": null, \"resposta\": \"...\"}\n\"confirmou\" só vale para confirmar_medicacao: true se disse que tomou, false se disse que ainda não tomou; nas outras intenções, null.`;\n\nconst d = msg.dados;\nconst fmt = (arr, f) => arr.length ? arr.map(f).join('; ') : '(sem registros)';\n// Webchat: quem fez login no chat é tratado pelo nome que digitou\nconst nomeWeb = msg.canal === 'web' ? msg.nomeWeb : '';\nconst nomeUsuario = nomeWeb || msg.usuario.nome;\nconst nomeIdoso = (nomeWeb && msg.usuario.perfil === 'idoso') ? nomeWeb : d.idoso;\nconst quem = msg.usuario.perfil === 'idoso'\n    ? nomeUsuario + ' (idoso)'\n    : msg.usuario.nome + ' (familiar: ' + (msg.usuario.parentesco || 'cuidador') + ' de ' + d.idoso + ')';\nmsg.textoUsuario =\n    'DATA E HORA: ' + quando + '\\n' +\n    'QUEM ESTÁ FALANDO: ' + quem + '\\n\\n' +\n    'DADOS DE ' + nomeIdoso + ':\\n' +\n    'Remédios: ' + fmt(d.remedios, r => r.nome + ' ' + r.dose + ' às ' + r.horario) + '\\n' +\n    'Doses de hoje: ' + fmt(d.doses_hoje, x => x.remedio + ' das ' + x.horario + ' (' + x.status + ')') + '\\n' +\n    'Próximas consultas: ' + fmt(d.consultas, x => x.especialidade + ' em ' + x.data + ' às ' + x.hora + ', ' + x.unidade + ', ' + x.endereco + ', telefone ' + x.telefone) + '\\n' +\n    'Família: ' + fmt(d.familiares, f => f.nome + ' (' + f.parentesco + ')') + '\\n' +\n    'Semana (doses confirmadas/total por dia): ' + fmt(d.semana, s => s.data + ': ' + s.confirmadas + '/' + s.total) + '\\n\\n' +\n    'CONTEXTO DA CONVERSA:\\n' +\n    'Última intenção: ' + (c.ultima_intencao || 'nenhuma') + '\\n' +\n    'Último remédio citado: ' + (c.ultimo_medicamento || 'nenhum') + '\\n' +\n    'Aguardando confirmação de: ' + (c.aguardando || 'nada') + '\\n' +\n    'Histórico recente:\\n' + (c.historico.length ? c.historico.map(h => (h.quem === 'usuario' ? 'Pessoa: ' : 'Acompanha: ') + h.texto).join('\\n') : '(início da conversa)') + '\\n\\n' +\n    'MENSAGEM: ' + msg.pergunta;\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "// Catálogo de INTENÇÕES (com exemplos) e ENTIDADES (com sinônimos) do Acompanha.\n// Ele monta o prompt do LLM e normaliza as entidades devolvidas. Para mudar o bot, edite aqui e faça Deploy.\nflow.set('catalogo', {\n    intencoes: {\n        lembrete_remedio: {\n            descricao: 'saber qual remédio tomar, quais remédios tem no dia ou o horário de um remédio',\n            exemplos: [\n                'Que remédio eu tomo agora?', 'Qual é o próximo remédio?', 'Tenho remédio pra tomar hoje?',\n                'Me lembra do meu remédio', 'Que horas é o comprimido da pressão?', 'Quais remédios eu tomo de manhã?',\n                'Esqueci qual remédio é agora', 'O remédio da diabetes é que horas?', 'Já tá na hora do meu comprimido?',\n                'Quantos remédios eu tomo por dia?', 'Me fala os remédios de hoje', 'Qual pílula eu tomo à noite?',\n                'Tem mais algum remédio hoje?'\n            ]\n        },\n        confirmar_medicacao: {\n            descricao: 'dizer que tomou (ou que ainda não tomou) um remédio',\n            exemplos: [\n                'Já tomei', 'Tomei o remédio', 'Acabei de tomar', 'Pronto, tomei a losartana', 'Tomei sim',\n                'Já engoli o comprimido', 'Tomei o da pressão', 'Pode marcar que eu tomei', 'Tomei agorinha',\n                'Sim, já tomei a pílula', 'Tomei com água agora mesmo', 'Tomei o de meio-dia', 'Feito, tomei',\n                'Ainda não tomei'\n            ]\n        },\n        consulta: {\n            descricao: 'saber data, hora ou médico da consulta, ou endereço e telefone da unidade de saúde',\n            exemplos: [\n                'Quando é minha consulta?', 'Tenho médico essa semana?', 'Onde fica o posto?', 'Qual o endereço da UBS?',\n                'Que horas é o cardiologista?', 'Minha consulta é amanhã?', 'Como eu chego na clínica?',\n                'Qual o telefone do posto de saúde?', 'Tenho exame marcado?', 'Em que dia é o médico?',\n                'Qual médico eu vou ver?', 'A consulta é de manhã ou de tarde?', 'Me lembra da consulta'\n            ]\n        },\n        pedir_ajuda: {\n            descricao: 'pedido de socorro, queda, mal-estar ou medo: a família precisa ser avisada na hora',\n            exemplos: [\n                'Preciso de ajuda', 'Socorro', 'Me ajuda', 'Caí no chão', 'Tô passando mal', 'Tô com tontura',\n                'Não tô me sentindo bem', 'Chama alguém pra mim', 'Estou com dor no peito', 'Me acode',\n                'Tô sozinha e com medo', 'Não consigo levantar', 'Ajuda, por favor'\n            ]\n        },\n        falar_familiar: {\n            descricao: 'querer falar com alguém da família ou mandar um recado para ela',\n            exemplos: [\n                'Quero falar com minha filha', 'Liga pro meu filho', 'Avisa a Ana que eu liguei', 'Manda um recado pro meu neto',\n                'Chama minha filha', 'Fala pra minha família me ligar', 'Quero conversar com o João',\n                'Pede pra minha neta vir aqui', 'Tô com saudade da minha filha', 'Avisa meu filho que eu tô bem',\n                'Quero ouvir a voz do meu neto', 'Manda minha filha me ligar', 'Diz pra família que eu tô bem'\n            ]\n        }\n    },\n    entidades: {\n        medicamento: { descricao: 'nome do remédio cadastrado ou o jeito de chamar', sinonimos: { 'remédio': ['remedio', 'comprimido', 'pílula', 'pilula', 'cápsula', 'capsula', 'gotinha', 'medicação', 'medicamento'] } },\n        horario: { descricao: 'período ou hora do dia', sinonimos: { 'manhã': ['manha', 'de manhã', 'cedo', 'café da manhã'], 'meio-dia': ['meio dia', 'almoço', 'almoco'], 'tarde': ['de tarde', 'à tarde'], 'noite': ['de noite', 'à noite', 'antes de dormir', 'janta'], 'agora': ['agorinha', 'neste momento', 'já'] } },\n        dia: { descricao: 'dia da semana ou dia relativo', sinonimos: { 'hoje': ['hj', 'neste dia'], 'amanhã': ['amanha'], 'depois de amanhã': ['depois de amanha'], 'esta semana': ['essa semana', 'nesta semana', 'nessa semana'] } },\n        familiar: { descricao: 'pessoa da família ou cuidador', sinonimos: { 'filha': [], 'filho': [], 'neto': [], 'neta': [], 'nora': [], 'genro': [], 'cuidador': ['cuidadora', 'enfermeira', 'acompanhante'], 'família': ['familia', 'alguém', 'alguem', 'meus filhos'] } },\n        unidade_saude: { descricao: 'local de atendimento', sinonimos: { 'unidade de saúde': ['posto', 'postinho', 'posto de saúde', 'ubs', 'clínica', 'clinica', 'ama', 'centro de saúde', 'hospital', 'médico', 'medico'] } }\n    }\n});",
+    "finalize": "",
+    "libs": [],
+    "x": 200,
+    "y": 450,
+    "wires": [
+      [
+        "ac_prompt"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_prompt",
+    "type": "prompt",
+    "name": "Prompt (system + user)",
+    "messages": [
+      {
+        "role": "system",
+        "content": "sistema",
+        "content-type": "msg"
+      },
+      {
+        "role": "user",
+        "content": "textoUsuario",
+        "content-type": "msg"
+      }
+    ],
+    "x": 450,
+    "y": 450,
+    "wires": [
+      [
+        "ac_croq"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_croq",
+    "type": "croq",
+    "name": "Groq (LLM)",
+    "apiKey": "",
+    "apiEndpoint": "/openai/v1/chat/completions",
+    "defaultModel": "openai/gpt-oss-120b",
+    "defaultTemperature": 0.2,
+    "defaultMaxTokens": 1500,
+    "x": 640,
+    "y": 450,
+    "wires": [
+      [
+        "ac_chg_resp",
+        "ac_dbg_groq"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_dbg_groq",
+    "type": "debug",
+    "name": "Groq bruto",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 640,
+    "y": 500,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_catch",
+    "type": "catch",
+    "z": "tab_acompanha",
+    "name": "Erro no Groq (ex.: sem API Key)",
+    "scope": [
+      "ac_croq"
+    ],
+    "uncaught": false,
+    "x": 230,
+    "y": 520,
+    "wires": [
+      [
+        "ac_chg_err"
+      ]
+    ]
+  },
+  {
+    "id": "ac_chg_err",
+    "type": "change",
+    "z": "tab_acompanha",
+    "name": "Resposta de erro",
+    "rules": [
+      {
+        "t": "set",
+        "p": "resposta",
+        "pt": "msg",
+        "to": "Tive um problema para consultar a IA agora. Tente novamente em instantes.",
+        "tot": "str"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 470,
+    "y": 520,
+    "wires": [
+      [
+        "ac_f_envio"
+      ]
+    ]
+  },
+  {
+    "id": "ac_chg_resp",
+    "type": "function",
+    "z": "tab_acompanha",
+    "name": "Lê resposta",
+    "func": "// Pega o texto da IA. Se a Groq devolveu um erro (chave inválida, modelo, limite...), mostra o motivo no debug\nconst p = msg.payload || {};\nconst texto = p.choices && p.choices[0] && p.choices[0].message && p.choices[0].message.content;\nif (texto) {\n    node.status({ fill: 'green', shape: 'dot', text: 'ok' });\n    msg.resposta = texto;\n    return msg;\n}\nconst fim = p.choices && p.choices[0] && p.choices[0].finish_reason;\nif (fim === 'length') {\n    node.warn('A IA gastou todos os tokens pensando e não escreveu a resposta → aumente \"Max Tokens\" no nó \"Groq (G)\" (ex.: 1500).');\n}\nconst e = p.error || {};\nconst motivo = e.message || (msg.error && msg.error.message) || JSON.stringify(p).slice(0, 300);\nconst dicas = {\n    invalid_api_key: 'A API Key está errada ou vazia: cole de novo no nó \"Groq (G)\", sem espaços.',\n    model_not_found: 'Modelo inexistente ou desativado: use openai/gpt-oss-120b no nó \"Groq (G)\" (veja console.groq.com/docs/models).',\n    model_decommissioned: 'Modelo desativado: use openai/gpt-oss-120b no nó \"Groq (G)\" (veja console.groq.com/docs/models).',\n    rate_limit_exceeded: 'Limite gratuito atingido: espere um pouco e tente de novo.'\n};\nnode.warn('A Groq recusou: ' + motivo + (e.code ? ' [' + e.code + ']' : '') + (dicas[e.code] ? ' → ' + dicas[e.code] : ''));\nnode.status({ fill: 'red', shape: 'ring', text: e.code || 'erro da Groq' });\nmsg.erroGroq = motivo;\nmsg.resposta = 'Tive um problema para consultar a IA agora. Tente novamente em instantes.';\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 820,
+    "y": 450,
+    "wires": [
+      [
+        "ac_f_interpreta"
+      ]
+    ]
+  },
+  {
+    "id": "ac_f_interpreta",
+    "type": "function",
+    "name": "Lê o JSON (intenção + entidades)",
+    "func": "// Lê o JSON devolvido pelo LLM, valida a intenção e normaliza as entidades pelos sinônimos do catálogo\n// Saída 1 = confirmar a dose no banco | Saída 2 = alertar a família | Saída 3 = segue para a resposta\nconst cat = flow.get('catalogo') || { intencoes: {}, entidades: {} };\nif (msg.erroGroq) { msg.intencao = 'erro'; msg.entidades = {}; return [null, null, msg]; }\n\nconst bruto = String(msg.resposta || '');\nlet j = null;\nconst achou = bruto.match(/\\{[\\s\\S]*\\}/);\ntry { j = JSON.parse(achou ? achou[0] : bruto); } catch (e) { j = null; }\nif (!j || typeof j !== 'object') {\n    node.warn({ ia_nao_devolveu_json: bruto.slice(0, 300) });\n    msg.intencao = 'outro';\n    msg.entidades = {};\n    msg.resposta = bruto && bruto.length < 400 ? bruto : 'Desculpe, não entendi. Pode repetir?';\n    return [null, null, msg];\n}\n\nconst validas = Object.keys(cat.intencoes).concat('outro');\nmsg.intencao = validas.includes(j.intencao) ? j.intencao : 'outro';\nmsg.confirmou = (typeof j.confirmou === 'boolean') ? j.confirmou : null;\nmsg.resposta = String(j.resposta || '').trim() || 'Desculpe, não entendi. Pode repetir?';\n\n// Normaliza cada entidade para o valor canônico (ex.: \"postinho\" -> \"unidade de saúde\")\nconst ent = {};\nconst recebidas = j.entidades || {};\nfor (const nome of Object.keys(cat.entidades)) {\n    let v = recebidas[nome];\n    if (v === undefined || v === null || v === '') { ent[nome] = null; continue; }\n    v = String(v).trim();\n    const baixo = v.toLowerCase();\n    for (const [canon, sins] of Object.entries(cat.entidades[nome].sinonimos)) {\n        if (baixo === canon || sins.includes(baixo)) { v = canon; break; }\n    }\n    ent[nome] = v;\n}\n// Medicamento: troca pelo nome cadastrado quando bate (ex.: \"losartana 50\" -> \"Losartana\")\nmsg.remedioCadastrado = '';\nif (ent.medicamento) {\n    const m = (msg.dados.remedios || []).find(r => ent.medicamento.toLowerCase().includes(r.nome.toLowerCase()) || r.nome.toLowerCase().includes(ent.medicamento.toLowerCase()));\n    if (m) { ent.medicamento = m.nome; msg.remedioCadastrado = m.nome; }\n}\nmsg.entidades = ent;\nnode.status({ fill: 'blue', shape: 'dot', text: msg.intencao + ' ' + JSON.stringify(Object.fromEntries(Object.entries(ent).filter(([k, v]) => v))) });\n\nconst ehIdoso = msg.usuario && msg.usuario.perfil === 'idoso';\nif (msg.intencao === 'confirmar_medicacao' && msg.confirmou !== false && ehIdoso) {\n    // Sem remédio na fala, usa o que estava aguardando confirmação (variável de contexto)\n    const rem = msg.remedioCadastrado || (msg.contexto && (msg.contexto.aguardando || msg.contexto.ultimo_medicamento)) || '';\n    msg.params = { $idoso: msg.idosoId, $rem: rem };\n    return [msg, null, null];\n}\nlet alerta = null;\nif (ehIdoso && (msg.intencao === 'pedir_ajuda' || msg.intencao === 'falar_familiar')) {\n    const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: env.get('FUSO') || 'America/Sao_Paulo' });\n    const nome = msg.usuario.nome;\n    const texto = msg.intencao === 'pedir_ajuda'\n        ? '🚨 ' + nome + ' pediu ajuda pelo Acompanha às ' + hora + '.\\nO que disse: \"' + msg.pergunta + '\"\\nLigue agora. Se não conseguir falar, acione alguém por perto ou o SAMU (192).'\n        : '📞 ' + nome + ' quer falar com ' + (ent.familiar || 'a família') + '.\\nRecado: \"' + msg.pergunta + '\"';\n    alerta = { idosoId: msg.idosoId, tipo: msg.intencao, alertaTexto: texto, teste: msg.teste };\n}\nreturn [null, alerta, msg];",
+    "outputs": 3,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1040,
+    "y": 450,
+    "wires": [
+      [
+        "ac_sql_conf"
+      ],
+      [
+        "ac_lout_ajuda"
+      ],
+      [
+        "ac_f_contexto"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_dbg_int",
+    "type": "debug",
+    "name": "Intenção e entidades",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "{\"intencao\": intencao, \"entidades\": entidades, \"confirmou\": confirmou, \"resposta\": resposta}",
+    "targetType": "jsonata",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1460,
+    "y": 410,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_sql_conf",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "prepared",
+    "sql": "WITH\npend AS (\n  SELECT d.medicamento_id AS mid, d.horario AS hor FROM doses d JOIN medicamentos m ON m.id = d.medicamento_id\n   WHERE m.idoso_id = $idoso AND d.data = date('now', 'localtime') AND d.status IN ('pendente', 'alertada')\n     AND ($rem = '' OR lower(m.nome) = lower($rem))\n   ORDER BY d.enviado_em DESC LIMIT 1),\nnome AS (\n  SELECT m.id AS mid, strftime('%H:%M', 'now', 'localtime') AS hor FROM medicamentos m\n   WHERE m.idoso_id = $idoso AND m.ativo = 1 AND $rem <> '' AND lower(m.nome) = lower($rem) LIMIT 1),\nperto AS (\n  SELECT m.id AS mid, strftime('%H:%M', 'now', 'localtime') AS hor FROM medicamentos m\n   WHERE m.idoso_id = $idoso AND m.ativo = 1 AND $rem = ''\n     AND abs(strftime('%s', 'now', 'localtime') - strftime('%s', date('now', 'localtime') || ' ' || m.horario || ':00')) <= 3600\n   ORDER BY abs(strftime('%s', 'now', 'localtime') - strftime('%s', date('now', 'localtime') || ' ' || m.horario || ':00')) LIMIT 1),\nalvo AS (\n  SELECT mid, hor FROM pend\n  UNION ALL SELECT mid, hor FROM nome WHERE NOT EXISTS (SELECT 1 FROM pend)\n  UNION ALL SELECT mid, hor FROM perto WHERE NOT EXISTS (SELECT 1 FROM pend))\nINSERT INTO doses (medicamento_id, data, horario, status, enviado_em, confirmado_em)\nSELECT mid, date('now', 'localtime'), hor, 'confirmada', datetime('now', 'localtime'), datetime('now', 'localtime') FROM alvo WHERE true LIMIT 1\nON CONFLICT (medicamento_id, data, horario) DO UPDATE SET status = 'confirmada', confirmado_em = datetime('now', 'localtime')",
+    "name": "Confirma a dose",
+    "x": 1250,
+    "y": 470,
+    "wires": [
+      [
+        "ac_f_contexto"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_lout_ajuda",
+    "type": "link out",
+    "name": "Alertar família",
+    "mode": "link",
+    "links": [
+      "ac_lin_alerta"
+    ],
+    "x": 1215,
+    "y": 510,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_contexto",
+    "type": "function",
+    "name": "Atualiza o contexto (chat_id)",
+    "func": "// VARIÁVEL DE CONTEXTO por chat_id: última intenção, último remédio citado, o que aguarda confirmação e as últimas falas\n// REPETIÇÃO DO LEMBRETE (\"ainda não tomei\"): a cada MINUTOS_REPETICAO, no máximo MAX_REPETICOES vezes; depois segue o alerta de 30 min\nconst MINUTOS_REPETICAO = Number(env.get('MINUTOS_REPETICAO')) || 10;\nconst MAX_REPETICOES = Number(env.get('MAX_REPETICOES')) || 2;\nconst contextos = flow.get('contextos') || {};\nconst c = contextos[msg.chatId] || { historico: [] };\nc.ultima_intencao = msg.intencao;\nif (msg.remedioCadastrado) c.ultimo_medicamento = msg.remedioCadastrado;   // só nomes cadastrados\nconst ehIdoso = msg.usuario && msg.usuario.perfil === 'idoso';\nif (msg.intencao === 'confirmar_medicacao' && msg.confirmou !== false) { c.aguardando = null; c.repeticao = null; }   // já tomou: para as repetições\nif (msg.intencao === 'confirmar_medicacao' && msg.confirmou === false && ehIdoso) {\n    const rem = msg.remedioCadastrado || c.aguardando || c.ultimo_medicamento;\n    if (rem && !c.repeticao) {   // não reinicia a contagem se o idoso repetir \"ainda não tomei\"\n        const cad = ((msg.dados && msg.dados.remedios) || []).find(r => r.nome === rem) || {};\n        c.aguardando = rem;\n        c.repeticao = { remedio: rem, dose: cad.dose || '', idosoId: msg.idosoId, idoso: msg.usuario.nome,\n                        restantes: MAX_REPETICOES, intervalo_min: MINUTOS_REPETICAO,\n                        proximo_em: Date.now() + MINUTOS_REPETICAO * 60000 };\n    }\n}\nif (msg.pergunta) c.historico.push({ quem: 'usuario', texto: msg.pergunta });\nif (msg.resposta) c.historico.push({ quem: 'acompanha', texto: msg.resposta });\nc.historico = c.historico.slice(-6);\nc.atualizado_em = new Date().toISOString();\ncontextos[msg.chatId] = c;\nflow.set('contextos', contextos);\nmsg.contexto = c;\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1440,
+    "y": 450,
+    "wires": [
+      [
+        "ac_f_envio",
+        "ac_dbg_int",
+        "ac_f_visto"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_envio",
+    "type": "function",
+    "name": "Prepara envio (texto, voz, web)",
+    "func": "// Saída 1 = texto no Telegram | Saída 2 = gerar a voz | Saída 3 = debug | Saída 4 = resposta do Webchat\n// Evita resposta dobrada: se o Groq falhar, o nó croq envia a msg E dispara o catch (mesmo _msgid)\nconst agora = Date.now(), vistos = context.get('vistos') || {};\nfor (const id in vistos) if (agora - vistos[id] > 60000) delete vistos[id];\nif (vistos[msg._msgid]) return null;\nvistos[msg._msgid] = agora; context.set('vistos', vistos);\n\nlet texto = msg.resposta || '';\nif (msg.entradaVoz && msg.transcricao) texto = '🎤 Você disse: \"' + msg.transcricao + '\"\\n\\n' + texto;\nmsg.textoEnviado = texto;\n\nif (msg.canal === 'web') {\n    msg.statusCode = 200;\n    // CORS: libera o site do Front-end (outro endereço) a chamar este Webchat\n    msg.headers = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };\n    msg.payload = { resposta: msg.resposta || '', intencao: msg.intencao || null, entidades: msg.entidades || {} };\n    return [null, null, msg, msg];\n}\nconst telegram = msg.teste ? null : { payload: { chatId: msg.chatId, type: 'message', content: texto } };\n// Fala quando a pergunta veio por áudio e em todo lembrete (o idoso só ouve)\nconst fala = ((msg.entradaVoz || msg.sempreFalar) && msg.resposta) ? Object.assign({}, msg, { textoFala: msg.resposta }) : null;\nreturn [telegram, fala, msg, null];",
+    "outputs": 4,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1660,
+    "y": 330,
+    "wires": [
+      [
+        "ac_tg_out"
+      ],
+      [
+        "ac_call_tts"
+      ],
+      [
+        "ac_dbg_resp"
+      ],
+      [
+        "ac_http_res_json"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_tg_out",
+    "type": "telegram sender",
+    "name": "Telegram (saída)",
+    "bot": "ac_bot",
+    "haserroroutput": false,
+    "outputs": 1,
+    "x": 1890,
+    "y": 290,
+    "wires": [
+      []
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_dbg_resp",
+    "type": "debug",
+    "name": "Resposta final",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "textoEnviado",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1880,
+    "y": 370,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_call_tts",
+    "type": "link call",
+    "z": "tab_acompanha",
+    "name": "Falar (TTS)",
+    "links": [
+      "ac_lin_tts"
+    ],
+    "linkType": "static",
+    "timeout": "30",
+    "x": 1870,
+    "y": 330,
+    "wires": [
+      [
+        "ac_f_envia_voz"
+      ]
+    ]
+  },
+  {
+    "id": "ac_f_envia_voz",
+    "type": "function",
+    "z": "tab_acompanha",
+    "name": "Envia a voz",
+    "func": "// Saída 1 = mensagem de voz no Telegram | Saída 2 = tocar no navegador (testes)\nif (!Buffer.isBuffer(msg.audioResposta)) return null;     // sem áudio: o texto já foi enviado\nif (msg.teste) return [null, { payload: msg.audioResposta }];\nreturn [{\n    payload: {\n        chatId: msg.chatId,\n        type: 'voice',\n        content: msg.audioResposta,\n        fileOptions: { filename: 'resposta.mp3', contentType: 'audio/mpeg' }\n    }\n}, null];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 2060,
+    "y": 330,
+    "wires": [
+      [
+        "ac_tg_out"
+      ],
+      [
+        "ac_play_main"
+      ]
+    ]
+  },
+  {
+    "id": "ac_play_main",
+    "type": "play audio",
+    "z": "tab_acompanha",
+    "name": "Toca a resposta (testes)",
+    "voice": "",
+    "x": 2260,
+    "y": 370,
+    "wires": []
+  },
+  {
+    "id": "ac_c2",
+    "type": "comment",
+    "name": "2) LEMBRETES: a cada minuto procura remédios na hora, registra a dose como pendente e manda texto + voz ao idoso",
+    "info": "",
+    "x": 450,
+    "y": 680,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_inj_min",
+    "type": "inject",
+    "name": "A cada minuto",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "60",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 130,
+    "y": 730,
+    "wires": [
+      [
+        "ac_sql_lemb"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_sql_lemb",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "fixed",
+    "sql": "SELECT m.id, m.nome, m.dose, m.horario, u.id AS idoso_id, u.telegram_id, u.nome AS idoso FROM medicamentos m JOIN usuarios u ON u.id = m.idoso_id WHERE m.ativo = 1 AND u.ativo = 1 AND m.horario = strftime('%H:%M', 'now', 'localtime') AND NOT EXISTS (SELECT 1 FROM doses d WHERE d.medicamento_id = m.id AND d.data = date('now', 'localtime') AND d.horario = m.horario)",
+    "name": "Remédios desta hora",
+    "x": 340,
+    "y": 730,
+    "wires": [
+      [
+        "ac_f_lemb_um"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_inj_lemb_teste",
+    "type": "inject",
+    "name": "Testar lembrete agora (Losartana)",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 780,
+    "wires": [
+      [
+        "ac_sql_lemb_teste"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_sql_lemb_teste",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "fixed",
+    "sql": "SELECT m.id, m.nome, m.dose, strftime('%H:%M', 'now', 'localtime') AS horario, u.id AS idoso_id, u.telegram_id, u.nome AS idoso FROM medicamentos m JOIN usuarios u ON u.id = m.idoso_id WHERE m.id = 1",
+    "name": "Remédio 1, horário de agora",
+    "x": 430,
+    "y": 780,
+    "wires": [
+      [
+        "ac_f_lemb_um"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_lemb_um",
+    "type": "function",
+    "name": "Um msg por remédio",
+    "func": "// Um lembrete por remédio encontrado\nconst rows = Array.isArray(msg.payload) ? msg.payload : [];\nif (rows.length === 0) return null;\nnode.status({ text: rows.length + ' lembrete(s) às ' + rows[0].horario });\nreturn [rows.map(r => ({ lembrete: r, params: { $m: r.id, $h: r.horario } }))];",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 650,
+    "y": 750,
+    "wires": [
+      [
+        "ac_sql_dose"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_sql_dose",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "prepared",
+    "sql": "INSERT OR IGNORE INTO doses (medicamento_id, data, horario, status, enviado_em) VALUES ($m, date('now', 'localtime'), $h, 'pendente', datetime('now', 'localtime'))",
+    "name": "Registra dose pendente",
+    "x": 860,
+    "y": 750,
+    "wires": [
+      [
+        "ac_f_lemb_msg"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_lemb_msg",
+    "type": "function",
+    "name": "Texto do lembrete + contexto",
+    "func": "// Monta o lembrete falado e marca no contexto do chat qual remédio aguarda confirmação\nconst r = msg.lembrete;\nmsg.chatId = r.telegram_id;\nmsg.idosoId = r.idoso_id;\nmsg.canal = 'telegram';\nmsg.entradaVoz = false;\nmsg.sempreFalar = true;\nmsg.intencao = 'lembrete_remedio';\nmsg.resposta = r.idoso + ', está na hora da ' + r.nome + ', ' + r.dose + '. Quando tomar, me responda falando: já tomei.';\nconst contextos = flow.get('contextos') || {};\nconst c = contextos[msg.chatId] || { historico: [] };\nc.aguardando = r.nome;\nc.repeticao = null;   // novo lembrete zera repetições pendentes\nc.ultimo_medicamento = r.nome;\nc.historico.push({ quem: 'acompanha', texto: msg.resposta });\nc.historico = c.historico.slice(-6);\ncontextos[msg.chatId] = c;\nflow.set('contextos', contextos);\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1080,
+    "y": 750,
+    "wires": [
+      [
+        "ac_f_envio"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_c3",
+    "type": "comment",
+    "name": "3) ALERTA À FAMÍLIA: dose pendente há MINUTOS_ALERTA (30 min) ou pedido de ajuda/recado -> Telegram dos familiares",
+    "info": "",
+    "x": 460,
+    "y": 850,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_inj_min2",
+    "type": "inject",
+    "name": "A cada minuto",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "60",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 130,
+    "y": 900,
+    "wires": [
+      [
+        "ac_f_min"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_min",
+    "type": "function",
+    "name": "Prazo do alerta",
+    "func": "msg.params = { $min: Number(env.get('MINUTOS_ALERTA')) || 30 };\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 310,
+    "y": 900,
+    "wires": [
+      [
+        "ac_sql_atraso"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_sql_atraso",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "prepared",
+    "sql": "SELECT d.id, m.nome AS remedio, m.dose, d.horario, u.nome AS idoso, u.id AS idoso_id FROM doses d JOIN medicamentos m ON m.id = d.medicamento_id JOIN usuarios u ON u.id = m.idoso_id WHERE d.status = 'pendente' AND d.enviado_em <= datetime('now', 'localtime', '-' || $min || ' minutes')",
+    "name": "Doses sem confirmação",
+    "x": 510,
+    "y": 900,
+    "wires": [
+      [
+        "ac_f_atraso"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_atraso",
+    "type": "function",
+    "name": "Um alerta por dose",
+    "func": "// Para cada dose atrasada: marca como \"alertada\" e avisa a família\nconst rows = Array.isArray(msg.payload) ? msg.payload : [];\nif (rows.length === 0) return null;\nconst min = Number(env.get('MINUTOS_ALERTA')) || 30;\nnode.status({ fill: 'yellow', shape: 'dot', text: rows.length + ' dose(s) sem confirmação' });\nreturn [rows.map(r => ({\n    params: { $id: r.id },\n    idosoId: r.idoso_id,\n    tipo: 'sem_confirmacao',\n    alertaTexto: '⚠️ ' + r.idoso + ' ainda não confirmou a ' + r.remedio + ' (' + r.dose + ') das ' + r.horario +\n                 '. Já se passaram ' + min + ' minutos. Vale ligar para saber se está tudo bem.'\n}))];",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 710,
+    "y": 900,
+    "wires": [
+      [
+        "ac_sql_marca"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_sql_marca",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "prepared",
+    "sql": "UPDATE doses SET status = 'alertada' WHERE id = $id",
+    "name": "Marca como alertada",
+    "x": 910,
+    "y": 900,
+    "wires": [
+      [
+        "ac_lout_atraso"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_lout_atraso",
+    "type": "link out",
+    "name": "Alertar família",
+    "mode": "link",
+    "links": [
+      "ac_lin_alerta"
+    ],
+    "x": 1065,
+    "y": 900,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_inj_atrasa",
+    "type": "inject",
+    "name": "Simular 31 min de atraso (teste)",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 950,
+    "wires": [
+      [
+        "ac_sql_atrasa"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_sql_atrasa",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "fixed",
+    "sql": "UPDATE doses SET enviado_em = datetime('now', 'localtime', '-31 minutes') WHERE status = 'pendente'",
+    "name": "Volta o relógio das pendentes",
+    "x": 440,
+    "y": 950,
+    "wires": [
+      [
+        "ac_dbg_atrasa"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_dbg_atrasa",
+    "type": "debug",
+    "name": "Pronto: o alerta sai em até 1 min",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 700,
+    "y": 950,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_lin_alerta",
+    "type": "link in",
+    "name": "Alertar família",
+    "links": [
+      "ac_lout_ajuda",
+      "ac_lout_atraso"
+    ],
+    "x": 125,
+    "y": 1010,
+    "wires": [
+      [
+        "ac_f_al1"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_al1",
+    "type": "function",
+    "name": "Registra o alerta",
+    "func": "msg.params = { $idoso: msg.idosoId, $tipo: msg.tipo, $texto: msg.alertaTexto };\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 290,
+    "y": 1010,
+    "wires": [
+      [
+        "ac_sql_al_ins"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_sql_al_ins",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "prepared",
+    "sql": "INSERT INTO alertas (idoso_id, tipo, mensagem) VALUES ($idoso, $tipo, $texto)",
+    "name": "INSERT alerta",
+    "x": 470,
+    "y": 1010,
+    "wires": [
+      [
+        "ac_f_al2"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_al2",
+    "type": "function",
+    "name": "Familiares do idoso",
+    "func": "msg.params = { $idoso: msg.idosoId };\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 650,
+    "y": 1010,
+    "wires": [
+      [
+        "ac_sql_al_fam"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_sql_al_fam",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "prepared",
+    "sql": "SELECT id, telegram_id, nome FROM usuarios WHERE idoso_id = $idoso AND perfil = 'familiar' AND ativo = 1 ORDER BY id",
+    "name": "SELECT familiares",
+    "x": 840,
+    "y": 1010,
+    "wires": [
+      [
+        "ac_f_al_envia"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_al_envia",
+    "type": "function",
+    "name": "Envia aos familiares",
+    "func": "// Saída 1 = Telegram para o PRIMEIRO familiar (ordem de cadastro) | Saída 2 = debug | Saída 3 = registra quem foi avisado\n// Se ele não vir o alerta, \"Escalonar alerta\" avisa o próximo depois de MINUTOS_ESCALONAR (15 min)\nconst fam = Array.isArray(msg.payload) ? msg.payload : [];\nconst primeiro = fam[0];\nconst resumo = { alerta: msg.alertaTexto, para: primeiro ? [primeiro.nome] : [], proximos: fam.slice(1).map(f => f.nome) };\nif (fam.length === 0) node.warn('Nenhum familiar cadastrado para o idoso ' + msg.idosoId + ': use \"Cadastrar familiar\".');\nnode.status({ fill: 'orange', shape: 'dot', text: msg.tipo + ' -> ' + (primeiro ? primeiro.nome : 'ninguém') });\nif (msg.teste || !primeiro) return [null, { payload: resumo }, null];\nreturn [{ payload: { chatId: primeiro.telegram_id, type: 'message', content: msg.alertaTexto } },\n        { payload: resumo },\n        { params: { $alerta: null, $idoso: msg.idosoId, $fam: primeiro.id, $ordem: 1 } }];",
+    "outputs": 3,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1040,
+    "y": 1010,
+    "wires": [
+      [
+        "ac_tg_out2"
+      ],
+      [
+        "ac_dbg_al"
+      ],
+      [
+        "ac_sql_envio_ins"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_tg_out2",
+    "type": "telegram sender",
+    "name": "Telegram (família)",
+    "bot": "ac_bot",
+    "haserroroutput": false,
+    "outputs": 1,
+    "x": 1260,
+    "y": 990,
+    "wires": [
+      []
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_dbg_al",
+    "type": "debug",
+    "name": "Alerta enviado",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1250,
+    "y": 1040,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_c4",
+    "type": "comment",
+    "name": "4) WEBCHAT (texto): abra http://localhost:1880/acompanha. Usa o mesmo cérebro do Telegram",
+    "info": "A página conversa como o usuário WEBCHAT_USUARIO (1 = Dona Maria). Cada aba do navegador tem o próprio contexto.",
+    "x": 410,
+    "y": 1100,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_http_get",
+    "type": "http in",
+    "name": "GET /acompanha",
+    "url": "/acompanha",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 150,
+    "y": 1150,
+    "wires": [
+      [
+        "ac_tpl_web"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_tpl_web",
+    "type": "template",
+    "name": "Página do Webchat",
+    "field": "payload",
+    "fieldType": "msg",
+    "format": "html",
+    "syntax": "plain",
+    "template": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>Acompanha · Webchat</title>\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link href=\"https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Montserrat:wght@700&display=swap\" rel=\"stylesheet\">\n<style>\n  :root { --tinta:#1E2938; --fundo:#F7F6F2; --verde:#0E7C74; --verde-texto:#0B6A63; --verde-claro:#E3F1EF; }\n  * { box-sizing: border-box; }\n  body { margin:0; background:var(--fundo); color:var(--tinta); font:18px/1.5 'Atkinson Hyperlegible', system-ui, sans-serif; }\n  header { padding:16px 20px; background:#fff; border-bottom:1px solid #e5e3dc; }\n  header h1 { margin:0; font:700 24px 'Montserrat', sans-serif; }\n  header p { margin:2px 0 0; font-size:16px; color:#4a5565; }\n  main { max-width:720px; margin:0 auto; padding:16px; }\n  #conversa { display:flex; flex-direction:column; gap:12px; min-height:50vh; padding-bottom:120px; }\n  .bolha { max-width:85%; padding:12px 16px; border-radius:16px; white-space:pre-wrap; }\n  .eu { align-self:flex-end; background:var(--tinta); color:#fff; border-bottom-right-radius:4px; }\n  .bot { align-self:flex-start; background:#fff; border:1px solid #e5e3dc; border-bottom-left-radius:4px; }\n  .meta { display:block; margin-top:6px; font-size:14px; color:var(--verde-texto); }\n  form { position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid #e5e3dc; padding:12px; }\n  .linha { max-width:720px; margin:0 auto; display:flex; gap:8px; }\n  label.oculto { position:absolute; left:-9999px; }\n  input[type=text] { flex:1; min-height:52px; font:inherit; padding:0 14px; border:2px solid #c9c6bd; border-radius:12px; }\n  input[type=text]:focus { outline:3px solid var(--verde-claro); border-color:var(--verde); }\n  button { min-height:52px; min-width:96px; font:700 18px inherit; background:var(--verde); color:#fff; border:0; border-radius:12px; cursor:pointer; }\n  button:disabled { opacity:.6; }\n  .opcoes { max-width:720px; margin:8px auto 0; font-size:16px; }\n  .sugestoes { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 16px; }\n  .sugestoes button { min-width:0; min-height:44px; padding:0 14px; font-weight:400; background:var(--verde-claro); color:var(--verde-texto); }\n</style>\n</head>\n<body>\n<header><h1>Acompanha</h1><p>Assistente para lembrar remédios e consultas</p></header>\n<main>\n  <div class=\"sugestoes\" aria-label=\"Sugestões de mensagem\">\n    <button type=\"button\">Que remédio eu tomo agora?</button>\n    <button type=\"button\">Já tomei</button>\n    <button type=\"button\">Quando é minha consulta?</button>\n    <button type=\"button\">Quero falar com minha filha</button>\n  </div>\n  <div id=\"conversa\" aria-live=\"polite\"></div>\n</main>\n<form id=\"form\">\n  <div class=\"linha\">\n    <label class=\"oculto\" for=\"texto\">Mensagem</label>\n    <input id=\"texto\" type=\"text\" autocomplete=\"off\" placeholder=\"Escreva sua mensagem\" required>\n    <button id=\"enviar\" type=\"submit\">Enviar</button>\n  </div>\n  <div class=\"opcoes\"><label><input id=\"ler\" type=\"checkbox\" checked> Ler as respostas em voz alta</label></div>\n</form>\n<script>\n  var sessao = 'w' + Math.random().toString(36).slice(2, 10);\n  var conversa = document.getElementById('conversa');\n  var campo = document.getElementById('texto');\n  var botao = document.getElementById('enviar');\n  function bolha(texto, quem, meta) {\n    var b = document.createElement('div');\n    b.className = 'bolha ' + quem;\n    b.textContent = texto;\n    if (meta) { var s = document.createElement('span'); s.className = 'meta'; s.textContent = meta; b.appendChild(s); }\n    conversa.appendChild(b);\n    b.scrollIntoView({ behavior: 'smooth', block: 'end' });\n  }\n  function falar(texto) {\n    if (!document.getElementById('ler').checked || !window.speechSynthesis) return;\n    var f = new SpeechSynthesisUtterance(texto); f.lang = 'pt-BR'; f.rate = 0.9;\n    speechSynthesis.cancel(); speechSynthesis.speak(f);\n  }\n  function enviar(texto) {\n    bolha(texto, 'eu');\n    botao.disabled = true;\n    fetch('acompanha/mensagem', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texto: texto, sessao: sessao }) })\n      .then(function (r) { return r.json(); })\n      .then(function (d) {\n        var meta = d.intencao ? 'intenção: ' + d.intencao : '';\n        var ents = Object.keys(d.entidades || {}).filter(function (k) { return d.entidades[k]; }).map(function (k) { return k + ' = ' + d.entidades[k]; });\n        if (ents.length) meta += ' · ' + ents.join(', ');\n        bolha(d.resposta || d.erro || 'Sem resposta.', 'bot', meta);\n        falar(d.resposta || '');\n      })\n      .catch(function () { bolha('Não consegui falar com o Acompanha agora. Tente de novo.', 'bot'); })\n      .finally(function () { botao.disabled = false; campo.focus(); });\n  }\n  document.getElementById('form').addEventListener('submit', function (e) {\n    e.preventDefault();\n    var t = campo.value.trim(); if (!t) return;\n    campo.value = ''; enviar(t);\n  });\n  document.querySelectorAll('.sugestoes button').forEach(function (b) {\n    b.addEventListener('click', function () { enviar(b.textContent); });\n  });\n  bolha('Olá! Eu sou o Acompanha. Posso lembrar seus remédios, suas consultas e avisar sua família.', 'bot');\n</script>\n</body>\n</html>",
+    "output": "str",
+    "x": 360,
+    "y": 1150,
+    "wires": [
+      [
+        "ac_http_res_html"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_http_res_html",
+    "type": "http response",
+    "name": "",
+    "statusCode": "",
+    "headers": {
+      "content-type": "text/html; charset=utf-8"
+    },
+    "x": 550,
+    "y": 1150,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_http_post",
+    "type": "http in",
+    "name": "POST /acompanha/mensagem",
+    "url": "/acompanha/mensagem",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 180,
+    "y": 1200,
+    "wires": [
+      [
+        "ac_f_web"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_web",
+    "type": "function",
+    "name": "Mensagem do Webchat",
+    "func": "// Saída 1 = segue para o mesmo atendimento do Telegram | Saída 2 = mensagem vazia (responde direto)\nconst b = (msg.payload && typeof msg.payload === 'object') ? msg.payload : {};\nconst texto = String(b.texto || '').trim().slice(0, 500);\nif (!texto) {\n    msg.statusCode = 400;\n    msg.headers = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };\n    msg.payload = { erro: 'Mensagem vazia.' };\n    return [null, msg];\n}\nmsg.canal = 'web';\nmsg.entradaVoz = false;\nmsg.pergunta = texto;\nmsg.nomeWeb = String(b.nome || '').replace(/[^\\p{L} '-]/gu, '').trim().slice(0, 40);   // nome informado no login do chat\nmsg.chatId = 'web-' + String(b.sessao || 'demo').replace(/[^\\w-]/g, '').slice(0, 40);   // contexto separado por aba\nmsg.userId = msg.chatId;\nmsg.params = { $tg: -1, $uid: Number(env.get('WEBCHAT_USUARIO')) || 1 };\nreturn [msg, null];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 1200,
+    "wires": [
+      [
+        "ac_sql_user"
+      ],
+      [
+        "ac_http_res_json"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_http_opt",
+    "type": "http in",
+    "name": "OPTIONS (CORS do site)",
+    "url": "/acompanha/mensagem",
+    "method": "options",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 170,
+    "y": 1250,
+    "wires": [
+      [
+        "ac_f_opt"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_opt",
+    "type": "function",
+    "name": "Libera o site (CORS)",
+    "func": "// O navegador pergunta antes do POST se o site do Front-end pode chamar esta API\nmsg.statusCode = 204;\nmsg.headers = {\n    'Access-Control-Allow-Origin': '*',\n    'Access-Control-Allow-Methods': 'POST, OPTIONS',\n    'Access-Control-Allow-Headers': 'Content-Type'\n};\nmsg.payload = '';\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 1250,
+    "wires": [
+      [
+        "ac_http_res_opt"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_http_res_opt",
+    "type": "http response",
+    "name": "",
+    "statusCode": "",
+    "headers": {},
+    "x": 590,
+    "y": 1250,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_http_res_json",
+    "type": "http response",
+    "name": "Resposta do Webchat",
+    "statusCode": "",
+    "headers": {},
+    "x": 1900,
+    "y": 410,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_c5",
+    "type": "comment",
+    "z": "tab_acompanha",
+    "name": "5) SPEECH TO TEXT — Whisper da Groq (cole a API Key no nó Groq Whisper)",
+    "info": "Duplo clique no nó 'Groq Whisper' → Use authentication → Bearer → cole a mesma chave gsk_… do nó Groq (G).\nFormatos aceitos: ogg (voz do Telegram), mp3, m4a, wav, webm, flac. Limite do plano gratuito: 25 MB.",
+    "x": 330,
+    "y": 1270,
+    "wires": []
+  },
+  {
+    "id": "ac_lin_stt",
+    "type": "link in",
+    "z": "tab_acompanha",
+    "name": "Transcrever",
+    "links": [],
+    "x": 120,
+    "y": 1320,
+    "wires": [
+      [
+        "ac_f_stt_req"
+      ]
+    ]
+  },
+  {
+    "id": "ac_f_stt_req",
+    "type": "function",
+    "z": "tab_acompanha",
+    "name": "Monta envio (multipart)",
+    "func": "// Monta o envio multipart para o Whisper (Groq). O áudio chega em msg.audio (Buffer).\n// Saída 1 = envia ao Whisper | Saída 2 = áudio inválido (volta sem transcrição)\nconst a = msg.audio;\nif (!Buffer.isBuffer(a) || a.length < 1000) {\n    node.warn('Áudio vazio, curto demais ou não baixado (' + (Buffer.isBuffer(a) ? a.length + ' bytes' : 'sem Buffer') + ', status ' + msg.statusCode + ').');\n    msg.transcricao = ''; msg.pergunta = ''; msg.erroStt = true;\n    delete msg.audio;\n    return [null, msg];\n}\nif (a.length > 25 * 1024 * 1024) {\n    node.warn('Áudio maior que 25 MB (limite do plano gratuito da Groq).');\n    msg.transcricao = ''; msg.pergunta = ''; msg.erroStt = true;\n    delete msg.audio;\n    return [null, msg];\n}\n// Descobre o formato pelos primeiros bytes (o nome do arquivo nem sempre bate com o conteúdo)\nconst h = a.slice(0, 12);\nlet ext = 'ogg', tipo = 'audio/ogg';\nif (h.toString('ascii', 0, 4) === 'RIFF')                     { ext = 'wav';  tipo = 'audio/wav'; }\nelse if (h.toString('ascii', 0, 4) === 'OggS')                { ext = 'ogg';  tipo = 'audio/ogg'; }\nelse if (h.readUInt32BE(0) === 0x1A45DFA3)                    { ext = 'webm'; tipo = 'audio/webm'; }\nelse if (h.toString('ascii', 4, 8) === 'ftyp')                { ext = 'm4a';  tipo = 'audio/mp4'; }\nelse if (h.toString('ascii', 0, 4) === 'fLaC')                { ext = 'flac'; tipo = 'audio/flac'; }\nelse if (h.toString('ascii', 0, 3) === 'ID3' || (h[0] === 0xFF && (h[1] & 0xE0) === 0xE0)) { ext = 'mp3'; tipo = 'audio/mpeg'; }\nelse node.warn('Formato de áudio não reconhecido; enviando como .ogg. Primeiros bytes: ' + h.toString('hex'));\n\ndelete msg.url;                                        // a URL do Whisper está escrita no próprio nó http request\nmsg.sttForm = {                                        // guardado para uma nova tentativa, se a Groq falhar\n    file: { value: a, options: { filename: 'audio.' + ext, contentType: tipo } },\n    model: env.get('STT_MODEL') || 'whisper-large-v3-turbo',\n    language: 'pt',\n    response_format: 'json',\n    temperature: '0'\n};\nmsg.sttTentativa = 1;\nmsg.headers = { 'Content-Type': 'multipart/form-data' };\nmsg.payload = msg.sttForm;\nnode.status({ text: ext + ' · ' + Math.round(a.length / 1024) + ' KB → Whisper' });\ndelete msg.audio;\nreturn [msg, null];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 330,
+    "y": 1320,
+    "wires": [
+      [
+        "ac_http_whisper"
+      ],
+      [
+        "ac_lout_stt"
+      ]
+    ]
+  },
+  {
+    "id": "ac_http_whisper",
+    "type": "http request",
+    "z": "tab_acompanha",
+    "name": "Groq Whisper (cole a API Key)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "bearer",
+    "senderr": false,
+    "headers": [],
+    "x": 590,
+    "y": 1320,
+    "wires": [
+      [
+        "ac_f_stt_le"
+      ]
+    ]
+  },
+  {
+    "id": "ac_f_stt_le",
+    "type": "function",
+    "z": "tab_acompanha",
+    "name": "Lê a transcrição",
+    "func": "// Resposta do Whisper: { \"text\": \"...\" }\n// Saída 1 = segue com a transcrição | Saída 2 = tenta de novo (falha passageira da Groq: 5xx ou rede)\nconst s = Number(msg.statusCode);\nif (s === 200 && msg.payload && typeof msg.payload.text === 'string') {\n    msg.transcricao = msg.payload.text.trim();\n    msg.pergunta = msg.transcricao;\n    delete msg.sttForm;\n    node.status({ fill: 'green', shape: 'dot', text: msg.transcricao ? '\"' + msg.transcricao.slice(0, 40) + '\"' : 'áudio sem fala' });\n    return [msg, null];\n}\nconst erroCert = /CERT|certificate|issuer/i.test(String(msg.statusCode) + ' ' + String(msg.payload));\nconst passageira = !erroCert && (!(s >= 400 && s < 500) || s === 429);   // 5xx, 429 ou erro de rede\nif (passageira && msg.sttTentativa < 3 && msg.sttForm) {\n    msg.sttTentativa++;\n    node.status({ fill: 'yellow', shape: 'ring', text: 'Groq ' + (s || 'rede') + ' · tentativa ' + msg.sttTentativa });\n    msg.headers = { 'Content-Type': 'multipart/form-data' };\n    msg.payload = msg.sttForm;\n    delete msg.statusCode; delete msg.responseUrl;\n    setTimeout(() => node.send([null, msg]), 2000 * (msg.sttTentativa - 1));\n    return null;\n}\nconst motivos = {\n    400: 'a Groq não aceitou o arquivo (formato, áudio corrompido ou curto demais)',\n    401: 'token ausente ou errado: cole a API Key no nó \"Groq Whisper\"',\n    404: 'modelo de transcrição inexistente: confira STT_MODEL nas variáveis da aba',\n    413: 'arquivo grande demais',\n    429: 'limite gratuito atingido; espere um pouco'\n};\nconst corpo = typeof msg.payload === 'string' ? msg.payload : JSON.stringify(msg.payload);\nnode.warn({\n    erro_whisper: s || msg.statusCode,\n    motivo: erroCert ? 'CERTIFICADO: o Node-RED foi aberto sem NODE_OPTIONS=--use-system-ca (feche e abra de novo com a correção)' : motivos[s] || (s >= 500 ? 'a Groq está instável agora (tentei 3 vezes); teste de novo em alguns minutos' : 'erro de rede'),\n    detalhe: corpo.replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, 200)\n});\nnode.status({ fill: 'red', shape: 'ring', text: 'erro ' + (s || msg.statusCode) });\nmsg.transcricao = ''; msg.pergunta = ''; msg.erroStt = true;\ndelete msg.sttForm;\nreturn [msg, null];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 820,
+    "y": 1320,
+    "wires": [
+      [
+        "ac_lout_stt"
+      ],
+      [
+        "ac_http_whisper"
+      ]
+    ]
+  },
+  {
+    "id": "ac_lout_stt",
+    "type": "link out",
+    "z": "tab_acompanha",
+    "name": "Volta",
+    "mode": "return",
+    "links": [],
+    "x": 990,
+    "y": 1320,
+    "wires": []
+  },
+  {
+    "id": "ac_c6",
+    "type": "comment",
+    "z": "tab_acompanha",
+    "name": "6) TEXT TO SPEECH — Gemini TTS (Google, gratuito, fala português) → MP3",
+    "info": "Chave gratuita em aistudio.google.com > Get API key (sem cartão).\nNo nó 'Gemini TTS', em Cabeçalhos: x-goog-api-key = sua chave.\nModelo e voz nas variáveis da aba: TTS_MODEL (gemini-3.8-flash-tts) e TTS_VOZ (Kore, Puck, Charon, Aoede...).\nO plano gratuito tem limite por minuto e por dia: em aula, cada aluno usa a própria chave.",
+    "x": 290,
+    "y": 1390,
+    "wires": []
+  },
+  {
+    "id": "ac_lin_tts",
+    "type": "link in",
+    "z": "tab_acompanha",
+    "name": "Falar",
+    "links": [],
+    "x": 110,
+    "y": 1440,
+    "wires": [
+      [
+        "ac_f_tts_texto"
+      ]
+    ]
+  },
+  {
+    "id": "ac_f_tts_texto",
+    "type": "function",
+    "z": "tab_acompanha",
+    "name": "Prepara o texto",
+    "func": "// Prepara o texto para ser falado: tira citações, marcações, links e emojis, e limita o tamanho\n// Saída 1 = envia ao Gemini TTS (Google, gratuito) | Saída 2 = nada para falar\nlet t = String(msg.textoFala || '');\nt = t.replace(/\\([^()]*\\.pdf[^()]*\\)/gi, '')              // citações (manual.pdf, p. 2)\n     .replace(/https?:\\/\\/\\S+/g, 'o link enviado')\n     .replace(/[*_#`>|]/g, '')                            // marcações de markdown\n     .replace(/[\\u{1F300}-\\u{1FAFF}\\u{2600}-\\u{27BF}]/gu, '')\n     .replace(/\\s+/g, ' ').trim();\nconst MAX = Number(env.get('TTS_MAX_CARACTERES')) || 600;\nif (t.length > MAX) {\n    const corte = t.lastIndexOf('.', MAX);\n    t = t.slice(0, corte > MAX / 2 ? corte + 1 : MAX) + ' O restante está na mensagem de texto.';\n}\nif (!t) {\n    msg.audioResposta = null;\n    return [null, msg];\n}\ndelete msg.url;                                            // a URL do serviço de voz está escrita no nó http request\nmsg.headers = { 'Content-Type': 'application/json' };     // a API Key vai no cabeçalho escrito no próprio nó\nmsg.payload = {\n    model: env.get('TTS_MODEL') || 'gemini-3.8-flash-tts',\n    input: [{\n        type: 'user_input',\n        content: [{\n            type: 'text',\n            text: t,\n            annotations: [{ type: 'speech_metadata', style: 'português do Brasil, voz calma e acolhedora, falando devagar e com clareza para uma pessoa idosa' }]\n        }]\n    }],\n    response_format: { type: 'audio' },\n    generation_config: { speech_config: [{ voice: env.get('TTS_VOZ') || 'Kore' }] }\n};\nnode.status({ text: t.length + ' caracteres → voz' });\nreturn [msg, null];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 300,
+    "y": 1440,
+    "wires": [
+      [
+        "ac_http_tts"
+      ],
+      [
+        "ac_lout_tts"
+      ]
+    ]
+  },
+  {
+    "id": "ac_http_tts",
+    "type": "http request",
+    "z": "tab_acompanha",
+    "name": "Gemini TTS (cole a API Key)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://generativelanguage.googleapis.com/v1beta/interactions",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [
+      {
+        "keyType": "other",
+        "keyValue": "x-goog-api-key",
+        "valueType": "other",
+        "valueValue": "COLE_SUA_API_KEY_AQUI"
+      }
+    ],
+    "x": 520,
+    "y": 1440,
+    "wires": [
+      [
+        "ac_f_gem_audio"
+      ]
+    ]
+  },
+  {
+    "id": "ac_f_gem_audio",
+    "type": "function",
+    "z": "tab_acompanha",
+    "name": "Extrai o áudio",
+    "func": "// O Gemini devolve JSON; o áudio vem em base64 (WAV 24 kHz mono 16 bits) dentro de steps[].content[]\nconst p = msg.payload;\nlet dados = null;\nif (msg.statusCode === 200 && p && Array.isArray(p.steps)) {\n    for (const st of p.steps) {\n        for (const c of (st.content || [])) if (c && c.type === 'audio' && c.data) dados = c.data;   // fica com o último bloco\n    }\n}\nif (!dados) {\n    // erro (ou resposta sem áudio): repassa o texto para o próximo nó explicar\n    msg.payload = Buffer.from(typeof p === 'string' ? p : JSON.stringify((p && p.error) || p || {}));\n    if (msg.statusCode === 200) msg.statusCode = 'sem áudio';\n    return msg;\n}\nlet audio = Buffer.from(dados, 'base64');\nif (audio.toString('ascii', 0, 4) !== 'RIFF') {             // PCM puro: acrescenta o cabeçalho WAV\n    const h = Buffer.alloc(44), sr = 24000;\n    h.write('RIFF', 0); h.writeUInt32LE(36 + audio.length, 4); h.write('WAVE', 8); h.write('fmt ', 12);\n    h.writeUInt32LE(16, 16); h.writeUInt16LE(1, 20); h.writeUInt16LE(1, 22); h.writeUInt32LE(sr, 24);\n    h.writeUInt32LE(sr * 2, 28); h.writeUInt16LE(2, 32); h.writeUInt16LE(16, 34); h.write('data', 36); h.writeUInt32LE(audio.length, 40);\n    audio = Buffer.concat([h, audio]);\n}\nmsg.payload = audio;\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 700,
+    "y": 1470,
+    "wires": [
+      [
+        "ac_f_mp3"
+      ]
+    ]
+  },
+  {
+    "id": "ac_f_mp3",
+    "type": "function",
+    "z": "tab_acompanha",
+    "name": "Confere o áudio",
+    "func": "// Confere o áudio e deixa em MP3 (formato aceito como voz no Telegram)\n// O Gemini devolve WAV: converte com @jambonz/lamejs (instalada sozinha no Deploy). Se já vier MP3, só repassa.\nconst a = msg.payload;\nconst ehBuffer = Buffer.isBuffer(a);\nif (msg.statusCode !== 200 || !ehBuffer || a.length < 100) {\n    let detalhe = ehBuffer ? a.toString('utf8').slice(0, 300) : String(a || '');\n    try { const j = JSON.parse(detalhe); detalhe = j.message || (j.error && j.error.message) || detalhe; } catch (e) {}\n    const dicas = {\n        400: /API key/i.test(detalhe) ? 'API Key inválida: cole a chave do Google AI Studio no cabeçalho x-goog-api-key do nó \"Gemini TTS\"' : 'pedido recusado; veja o detalhe',\n        401: 'API Key ausente ou inválida no cabeçalho x-goog-api-key do nó \"Gemini TTS\"',\n        403: 'API Key sem permissão (crie a chave em aistudio.google.com)',\n        404: 'modelo de voz inexistente: confira TTS_MODEL nas variáveis da aba',\n        429: 'limite gratuito do Gemini atingido (por minuto ou por dia); espere e tente de novo',\n        'sem áudio': 'o Gemini respondeu sem áudio; tente de novo'\n    };\n    node.warn({ erro_voz: msg.statusCode, motivo: dicas[msg.statusCode] || (/CERT|issuer/i.test(detalhe + msg.statusCode) ? 'certificado: abra o Node-RED com NODE_OPTIONS=--use-system-ca' : 'veja o detalhe'), detalhe: detalhe });\n    node.status({ fill: 'red', shape: 'ring', text: 'voz indisponível (' + msg.statusCode + ')' });\n    msg.audioResposta = null;\n    return msg;\n}\nconst ini3 = a.toString('ascii', 0, 3);\nif (ini3 === 'ID3' || (a[0] === 0xFF && (a[1] & 0xE0) === 0xE0)) {      // já é MP3\n    msg.audioResposta = a;\n    node.status({ fill: 'green', shape: 'dot', text: 'MP3 pronto (' + Math.round(a.length / 1024) + ' KB)' });\n    return msg;\n}\nif (a.toString('ascii', 0, 4) !== 'RIFF') {\n    node.warn('O serviço de voz devolveu um formato inesperado (primeiros bytes: ' + a.slice(0, 8).toString('hex') + '). Peça audio/mp3.');\n    msg.audioResposta = null;\n    return msg;\n}\n// WAV → MP3: procura os blocos \"fmt \" (formato) e \"data\" (amostras)\nconst wav = a;\nlet pos = 12, canais = 1, taxa = 22050, bits = 16, ini = -1, tam = 0;\nwhile (pos + 8 <= wav.length) {\n    const id = wav.toString('ascii', pos, pos + 4);\n    const size = wav.readUInt32LE(pos + 4);\n    if (id === 'fmt ') {\n        canais = wav.readUInt16LE(pos + 10);\n        taxa = wav.readUInt32LE(pos + 12);\n        bits = wav.readUInt16LE(pos + 22);\n    }\n    if (id === 'data') { ini = pos + 8; tam = Math.min(size, wav.length - ini); break; }\n    pos += 8 + size + (size % 2);\n}\nif (ini < 0 || bits !== 16 || canais !== 1) {\n    node.warn('WAV em formato inesperado (' + canais + ' canal(is), ' + bits + ' bits).');\n    msg.audioResposta = null;\n    return msg;\n}\nconst bytes = wav.subarray(ini, ini + tam - (tam % 2));\nconst amostras = new Int16Array(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.length));\nconst L = lamejs.Mp3Encoder ? lamejs : lamejs.default;   // o módulo pode vir direto ou em .default\nconst enc = new L.Mp3Encoder(1, taxa, 64);\nconst partes = [];\nfor (let i = 0; i < amostras.length; i += 1152) {\n    const b = enc.encodeBuffer(amostras.subarray(i, i + 1152));\n    if (b.length) partes.push(Buffer.from(b));\n}\nconst fim = enc.flush();\nif (fim.length) partes.push(Buffer.from(fim));\nmsg.audioResposta = Buffer.concat(partes);\nmsg.duracao = Number((amostras.length / taxa).toFixed(1));\nnode.status({ fill: 'green', shape: 'dot', text: msg.duracao + ' s de áudio (' + Math.round(msg.audioResposta.length / 1024) + ' KB)' });\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [
+      {
+        "var": "lamejs",
+        "module": "@jambonz/lamejs"
+      }
+    ],
+    "x": 860,
+    "y": 1440,
+    "wires": [
+      [
+        "ac_lout_tts"
+      ]
+    ]
+  },
+  {
+    "id": "ac_lout_tts",
+    "type": "link out",
+    "z": "tab_acompanha",
+    "name": "Volta",
+    "mode": "return",
+    "links": [],
+    "x": 1020,
+    "y": 1440,
+    "wires": []
+  },
+  {
+    "id": "ac_c7",
+    "type": "comment",
+    "z": "tab_acompanha",
+    "name": "7) LABORATÓRIO DE VOZ — testes no navegador (paletas browser-utils e play-audio)",
+    "info": "O microfone funciona abrindo o Node-RED em http://127.0.0.1:1880 (ou localhost). Clique no botão do nó para gravar e de novo para parar.",
+    "x": 320,
+    "y": 1520,
+    "wires": []
+  },
+  {
+    "id": "ac_mic",
+    "type": "microphone",
+    "z": "tab_acompanha",
+    "name": "T1 · Microfone → texto",
+    "x": 150,
+    "y": 1570,
+    "wires": [
+      [
+        "ac_chg_lab_mic"
+      ]
+    ]
+  },
+  {
+    "id": "ac_chg_lab_mic",
+    "type": "change",
+    "z": "tab_acompanha",
+    "name": "Áudio do microfone",
+    "rules": [
+      {
+        "t": "set",
+        "p": "audio",
+        "pt": "msg",
+        "to": "payload",
+        "tot": "msg"
+      },
+      {
+        "t": "set",
+        "p": "audioNome",
+        "pt": "msg",
+        "to": "microfone.wav",
+        "tot": "str"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 390,
+    "y": 1570,
+    "wires": [
+      [
+        "ac_call_lab_stt"
+      ]
+    ]
+  },
+  {
+    "id": "ac_call_lab_stt",
+    "type": "link call",
+    "z": "tab_acompanha",
+    "name": "Transcrever (STT)",
+    "links": [
+      "ac_lin_stt"
+    ],
+    "linkType": "static",
+    "timeout": "30",
+    "x": 620,
+    "y": 1570,
+    "wires": [
+      [
+        "ac_dbg_lab_stt"
+      ]
+    ]
+  },
+  {
+    "id": "ac_dbg_lab_stt",
+    "type": "debug",
+    "z": "tab_acompanha",
+    "name": "Transcrição",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "transcricao",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 810,
+    "y": 1570,
+    "wires": []
+  },
+  {
+    "id": "ac_inj_lab_tts",
+    "type": "inject",
+    "z": "tab_acompanha",
+    "name": "T2 · Texto -> voz (Gemini)",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "Dona Maria, está na hora da Losartana, cinquenta miligramas. Quando tomar, me responda falando: já tomei.",
+    "payloadType": "str",
+    "x": 160,
+    "y": 1620,
+    "wires": [
+      [
+        "ac_chg_lab_tts"
+      ]
+    ]
+  },
+  {
+    "id": "ac_chg_lab_tts",
+    "type": "change",
+    "z": "tab_acompanha",
+    "name": "Texto para falar",
+    "rules": [
+      {
+        "t": "set",
+        "p": "textoFala",
+        "pt": "msg",
+        "to": "payload",
+        "tot": "msg"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 390,
+    "y": 1620,
+    "wires": [
+      [
+        "ac_call_lab_tts"
+      ]
+    ]
+  },
+  {
+    "id": "ac_call_lab_tts",
+    "type": "link call",
+    "z": "tab_acompanha",
+    "name": "Falar (TTS)",
+    "links": [
+      "ac_lin_tts"
+    ],
+    "linkType": "static",
+    "timeout": "30",
+    "x": 580,
+    "y": 1620,
+    "wires": [
+      [
+        "ac_f_lab_play"
+      ]
+    ]
+  },
+  {
+    "id": "ac_f_lab_play",
+    "type": "function",
+    "z": "tab_acompanha",
+    "name": "Pega o MP3",
+    "func": "// Entrega o MP3 para o nó \"play audio\" (toca no navegador) e para o nó que salva o arquivo\nif (!Buffer.isBuffer(msg.audioResposta)) return null;\nmsg.payload = msg.audioResposta;\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 760,
+    "y": 1620,
+    "wires": [
+      [
+        "ac_play_lab",
+        "ac_file_out"
+      ]
+    ]
+  },
+  {
+    "id": "ac_play_lab",
+    "type": "play audio",
+    "z": "tab_acompanha",
+    "name": "Toca no navegador",
+    "voice": "",
+    "x": 960,
+    "y": 1600,
+    "wires": []
+  },
+  {
+    "id": "ac_file_out",
+    "type": "file",
+    "z": "tab_acompanha",
+    "name": "Salva resposta_teste.mp3",
+    "filename": "resposta_teste.mp3",
+    "filenameType": "str",
+    "appendNewline": false,
+    "createDir": true,
+    "overwriteFile": "true",
+    "encoding": "none",
+    "x": 990,
+    "y": 1650,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "ac_mic_e2e",
+    "type": "microphone",
+    "z": "tab_acompanha",
+    "name": "T3 · Fale com o Acompanha pelo microfone (como Dona Maria)",
+    "x": 210,
+    "y": 1700,
+    "wires": [
+      [
+        "ac_chg_e2e"
+      ]
+    ]
+  },
+  {
+    "id": "ac_chg_e2e",
+    "type": "change",
+    "z": "tab_acompanha",
+    "name": "Simula a Dona Maria",
+    "rules": [
+      {
+        "t": "set",
+        "p": "audio",
+        "pt": "msg",
+        "to": "payload",
+        "tot": "msg"
+      },
+      {
+        "t": "set",
+        "p": "audioNome",
+        "pt": "msg",
+        "to": "microfone.wav",
+        "tot": "str"
+      },
+      {
+        "t": "set",
+        "p": "entradaVoz",
+        "pt": "msg",
+        "to": "true",
+        "tot": "bool"
+      },
+      {
+        "t": "set",
+        "p": "teste",
+        "pt": "msg",
+        "to": "true",
+        "tot": "bool"
+      },
+      {
+        "t": "set",
+        "p": "chatId",
+        "pt": "msg",
+        "to": "111111111",
+        "tot": "num"
+      },
+      {
+        "t": "set",
+        "p": "userId",
+        "pt": "msg",
+        "to": "111111111",
+        "tot": "num"
+      },
+      {
+        "t": "set",
+        "p": "params",
+        "pt": "msg",
+        "to": "{\"$tg\": -1, \"$uid\": 1}",
+        "tot": "jsonata"
+      },
+      {
+        "t": "set",
+        "p": "canal",
+        "pt": "msg",
+        "to": "telegram",
+        "tot": "str"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 520,
+    "y": 1700,
+    "wires": [
+      [
+        "ac_sql_user"
+      ]
+    ]
+  },
+  {
+    "id": "ac_c8",
+    "type": "comment",
+    "name": "T3: o texto aparece no debug 'Resposta final' e a voz toca no nó 'Toca a resposta (testes)' da seção 1",
+    "info": "",
+    "x": 470,
+    "y": 1750,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_c9",
+    "type": "comment",
+    "name": "8) CONSULTAS AO BANCO: histórico semanal (H5), doses de hoje, alertas e contexto das conversas",
+    "info": "",
+    "x": 400,
+    "y": 1820,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_v1",
+    "type": "inject",
+    "name": "Histórico semanal (H5)",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 150,
+    "y": 1870,
+    "wires": [
+      [
+        "ac_v1_sql"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_v1_sql",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "fixed",
+    "sql": "SELECT d.data, COUNT(*) AS doses, SUM(d.status = 'confirmada') AS confirmadas, SUM(d.status <> 'confirmada') AS esquecidas FROM doses d WHERE d.data >= date('now', 'localtime', '-6 days') GROUP BY d.data ORDER BY d.data",
+    "name": "SELECT",
+    "x": 380,
+    "y": 1870,
+    "wires": [
+      [
+        "ac_dbg_val"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_v2",
+    "type": "inject",
+    "name": "Doses de hoje",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 150,
+    "y": 1920,
+    "wires": [
+      [
+        "ac_v2_sql"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_v2_sql",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "fixed",
+    "sql": "SELECT m.nome, d.horario, d.status, d.enviado_em, d.confirmado_em FROM doses d JOIN medicamentos m ON m.id = d.medicamento_id WHERE d.data = date('now', 'localtime') ORDER BY d.horario",
+    "name": "SELECT",
+    "x": 380,
+    "y": 1920,
+    "wires": [
+      [
+        "ac_dbg_val"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_v3",
+    "type": "inject",
+    "name": "Alertas enviados",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 150,
+    "y": 1970,
+    "wires": [
+      [
+        "ac_v3_sql"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_v3_sql",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "fixed",
+    "sql": "SELECT a.criado_em, a.tipo, a.mensagem, (SELECT group_concat(u.nome || ' (' || e.ordem || 'º, ' || e.enviado_em || CASE WHEN e.visto_em IS NULL THEN '' ELSE ', viu' END || ')', ' > ') FROM alertas_envios e JOIN usuarios u ON u.id = e.familiar_id WHERE e.alerta_id = a.id) AS avisados FROM alertas a ORDER BY a.id DESC LIMIT 20",
+    "name": "SELECT",
+    "x": 380,
+    "y": 1970,
+    "wires": [
+      [
+        "ac_dbg_val"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_v4",
+    "type": "inject",
+    "name": "Usuários cadastrados",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 150,
+    "y": 2020,
+    "wires": [
+      [
+        "ac_v4_sql"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_v4_sql",
+    "type": "sqlite",
+    "mydb": "ac_db",
+    "sqlquery": "fixed",
+    "sql": "SELECT id, telegram_id, nome, perfil, idoso_id, parentesco, ativo FROM usuarios",
+    "name": "SELECT",
+    "x": 380,
+    "y": 2020,
+    "wires": [
+      [
+        "ac_dbg_val"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_v5",
+    "type": "inject",
+    "name": "Contexto das conversas",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 150,
+    "y": 2070,
+    "wires": [
+      [
+        "ac_f_ctx"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_f_ctx",
+    "type": "function",
+    "name": "Lê o contexto",
+    "func": "msg.payload = flow.get('contextos') || {};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 2070,
+    "wires": [
+      [
+        "ac_dbg_val"
+      ]
+    ],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_dbg_val",
+    "type": "debug",
+    "name": "Consulta",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 600,
+    "y": 1950,
+    "wires": [],
+    "z": "tab_acompanha"
+  },
+  {
+    "id": "ac_db",
+    "type": "sqlitedb",
+    "db": "acompanha.db",
+    "mode": "RWC"
+  },
+  {
+    "id": "ac_bot",
+    "type": "telegram bot",
+    "botname": "AcompanhaBot",
+    "usernames": "",
+    "chatids": "",
+    "baseapiurl": "",
+    "updatemode": "polling",
+    "pollinterval": "300",
+    "usesocks": false,
+    "sockshost": "",
+    "socksport": "6667",
+    "socksusername": "anonymous",
+    "sockspassword": "",
+    "bothost": "",
+    "botpath": "",
+    "localbotport": "8443",
+    "publicbotport": "8443",
+    "privatekey": "",
+    "certificate": "",
+    "useselfsignedcertificate": false,
+    "sslterminated": false,
+    "verboselogging": false
+  },
+  {
+    "id": "ac_c_rep",
+    "type": "comment",
+    "z": "tab_acompanha",
+    "name": "2b) REPETIÇÃO: \"ainda não tomei\" -> repete texto + voz a cada 10 min, no máximo 2 vezes (depois segue o alerta de 30 min)",
+    "info": "",
+    "x": 260,
+    "y": 1130,
+    "wires": []
+  },
+  {
+    "id": "ac_inj_rep",
+    "type": "inject",
+    "z": "tab_acompanha",
+    "name": "A cada minuto",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "60",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "7",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 130,
+    "y": 1170,
+    "wires": [
+      [
+        "ac_f_rep"
+      ]
+    ]
+  },
+  {
+    "id": "ac_f_rep",
+    "type": "function",
+    "z": "tab_acompanha",
+    "name": "Repete o lembrete (ainda não tomei)",
+    "func": "// REPETE O LEMBRETE: a cada minuto, vê quem disse \"ainda não tomei\" e já passou o intervalo (texto + voz)\n// Os valores (MINUTOS_REPETICAO, MAX_REPETICOES) ficam em \"Atualiza o contexto (chat_id)\"; aqui só se segue o que foi agendado\nconst contextos = flow.get('contextos') || {};\nconst agora = Date.now(), saida = [];\nfor (const chatId of Object.keys(contextos)) {\n    const c = contextos[chatId], r = c.repeticao;\n    if (!r) continue;\n    if (!c.aguardando) { c.repeticao = null; continue; }      // confirmou: para\n    if (r.restantes <= 0 || agora < r.proximo_em) continue;\n    r.restantes -= 1;\n    r.proximo_em = agora + r.intervalo_min * 60000;\n    if (r.restantes <= 0) c.repeticao = null;                  // acabaram as repetições: segue só o alerta de 30 min\n    const resposta = r.idoso + ', lembrete: ainda está na hora da ' + r.remedio + (r.dose ? ', ' + r.dose : '') + '. Quando tomar, me responda falando: já tomei.';\n    c.historico.push({ quem: 'acompanha', texto: resposta });\n    c.historico = c.historico.slice(-6);\n    saida.push({ chatId: Number(chatId) || chatId, idosoId: r.idosoId, canal: 'telegram', entradaVoz: false, sempreFalar: true,\n                 intencao: 'lembrete_remedio', resposta: resposta });\n}\nif (saida.length === 0) return null;\nflow.set('contextos', contextos);\nnode.status({ fill: 'blue', shape: 'dot', text: saida.length + ' repetição(ões)' });\nreturn [saida];",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 1170,
+    "wires": [
+      [
+        "ac_f_envio"
+      ]
+    ]
+  },
+  {
+    "id": "ac_c_esc",
+    "type": "comment",
+    "z": "tab_acompanha",
+    "name": "3b) ESCALONAMENTO: familiar não viu/respondeu em 15 min -> avisa o próximo, em ordem de cadastro",
+    "info": "",
+    "x": 260,
+    "y": 1250,
+    "wires": []
+  },
+  {
+    "id": "ac_sql_envio_ins",
+    "type": "sqlite",
+    "z": "tab_acompanha",
+    "mydb": "ac_db",
+    "sqlquery": "prepared",
+    "sql": "INSERT OR IGNORE INTO alertas_envios (alerta_id, idoso_id, familiar_id, ordem) VALUES (COALESCE($alerta, (SELECT MAX(id) FROM alertas WHERE idoso_id = $idoso)), $idoso, $fam, $ordem)",
+    "name": "Registra familiar avisado",
+    "x": 1330,
+    "y": 1090,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "ac_inj_esc",
+    "type": "inject",
+    "z": "tab_acompanha",
+    "name": "A cada minuto",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "60",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "8",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 130,
+    "y": 1290,
+    "wires": [
+      [
+        "ac_f_esc_min"
+      ]
+    ]
+  },
+  {
+    "id": "ac_f_esc_min",
+    "type": "function",
+    "z": "tab_acompanha",
+    "name": "Prazo do escalonamento",
+    "func": "// Prazo do escalonamento: minutos sem o familiar ver/responder antes de avisar o próximo\nconst MINUTOS_ESCALONAR = Number(env.get('MINUTOS_ESCALONAR')) || 15;\nmsg.params = { $min: MINUTOS_ESCALONAR };\nmsg.minutos = MINUTOS_ESCALONAR;\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 1290,
+    "wires": [
+      [
+        "ac_sql_esc"
+      ]
+    ]
+  },
+  {
+    "id": "ac_sql_esc",
+    "type": "sqlite",
+    "z": "tab_acompanha",
+    "mydb": "ac_db",
+    "sqlquery": "prepared",
+    "sql": "SELECT a.id AS alerta_id, a.idoso_id, a.tipo, a.mensagem, f.id AS familiar_id, f.telegram_id, f.nome, e.ordem + 1 AS ordem,\n       (SELECT nome FROM usuarios WHERE id = e.familiar_id) AS anterior\nFROM alertas a\nJOIN alertas_envios e ON e.alerta_id = a.id AND e.ordem = (SELECT MAX(ordem) FROM alertas_envios WHERE alerta_id = a.id)\nJOIN usuarios f ON f.id = (SELECT MIN(id) FROM usuarios WHERE idoso_id = a.idoso_id AND perfil = 'familiar' AND ativo = 1 AND id > e.familiar_id)\nWHERE e.enviado_em <= datetime('now', 'localtime', '-' || $min || ' minutes')\n  AND a.criado_em >= datetime('now', 'localtime', '-1 day')\n  AND NOT EXISTS (SELECT 1 FROM alertas_envios v WHERE v.alerta_id = a.id AND v.visto_em IS NOT NULL)",
+    "name": "Alertas sem visualização",
+    "x": 620,
+    "y": 1290,
+    "wires": [
+      [
+        "ac_f_esc_env"
+      ]
+    ]
+  },
+  {
+    "id": "ac_f_esc_env",
+    "type": "function",
+    "z": "tab_acompanha",
+    "name": "Avisa o próximo familiar",
+    "func": "// Saída 1 = Telegram para o próximo familiar | Saída 2 = registra o envio\nconst rows = Array.isArray(msg.payload) ? msg.payload : [];\nif (rows.length === 0) return null;\nnode.status({ fill: 'orange', shape: 'dot', text: rows.length + ' alerta(s) escalonado(s)' });\nconst tg = [], reg = [];\nfor (const r of rows) {\n    const texto = '⏩ ' + (r.anterior || 'O familiar anterior') + ' não respondeu ao alerta há ' + msg.minutos + ' minutos. Você é o próximo a ser avisado.\\n\\n' + r.mensagem;\n    tg.push({ payload: { chatId: r.telegram_id, type: 'message', content: texto } });\n    reg.push({ params: { $alerta: r.alerta_id, $idoso: r.idoso_id, $fam: r.familiar_id, $ordem: r.ordem } });\n}\nreturn [tg, reg];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 880,
+    "y": 1290,
+    "wires": [
+      [
+        "ac_tg_out2"
+      ],
+      [
+        "ac_sql_envio_ins"
+      ]
+    ]
+  },
+  {
+    "id": "ac_f_visto",
+    "type": "function",
+    "z": "tab_acompanha",
+    "name": "Familiar viu o alerta?",
+    "func": "// Quando um familiar escreve para o Acompanha, ele \"viu\" o alerta: para o escalonamento desse idoso\nif (!msg.usuario || msg.usuario.perfil !== 'familiar') return null;\nmsg.params = { $idoso: msg.idosoId };\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1000,
+    "y": 1380,
+    "wires": [
+      [
+        "ac_sql_visto"
+      ]
+    ]
+  },
+  {
+    "id": "ac_sql_visto",
+    "type": "sqlite",
+    "z": "tab_acompanha",
+    "mydb": "ac_db",
+    "sqlquery": "prepared",
+    "sql": "UPDATE alertas_envios SET visto_em = datetime('now', 'localtime') WHERE idoso_id = $idoso AND visto_em IS NULL",
+    "name": "Marca alerta como visto",
+    "x": 1250,
+    "y": 1380,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "ac_tr_in",
+    "type": "http in",
+    "z": "tab_acompanha",
+    "name": "",
+    "url": "/acompanha/transcrever",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 340,
+    "y": 2140,
+    "wires": [
+      [
+        "ac_tr_f1"
+      ]
+    ]
+  },
+  {
+    "id": "ac_tr_f1",
+    "type": "function",
+    "z": "tab_acompanha",
+    "name": "Áudio do Webchat",
+    "func": "// Webchat com voz: recebe o áudio gravado no navegador (base64) e prepara para o Whisper.\n// Saída 1 = transcrever | Saída 2 = pedido inválido (responde erro)\nconst b = (msg.payload && typeof msg.payload === 'object') ? msg.payload : {};\nconst cab = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };\nconst buf = b.audio ? Buffer.from(String(b.audio), 'base64') : null;\nif (!buf || buf.length < 1000) {\n    msg.statusCode = 400; msg.headers = cab;\n    msg.payload = { erro: 'Não recebi o áudio. Grave de novo.', texto: '' };\n    return [null, msg];\n}\nmsg.audio = buf;          // o nó \"Monta envio (multipart)\" descobre o formato (webm, ogg, mp4...) pelos primeiros bytes\nmsg.headers = cab;\nreturn [msg, null];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 560,
+    "y": 2140,
+    "wires": [
+      [
+        "ac_tr_call"
+      ],
+      [
+        "ac_tr_res"
+      ]
+    ]
+  },
+  {
+    "id": "ac_tr_call",
+    "type": "link call",
+    "z": "tab_acompanha",
+    "name": "Transcrever (STT)",
+    "links": [
+      "ac_lin_stt"
+    ],
+    "linkType": "static",
+    "timeout": "40",
+    "x": 780,
+    "y": 2140,
+    "wires": [
+      [
+        "ac_tr_f2"
+      ]
+    ]
+  },
+  {
+    "id": "ac_tr_f2",
+    "type": "function",
+    "z": "tab_acompanha",
+    "name": "Texto do áudio",
+    "func": "// Devolve ao Webchat só o texto transcrito; o site envia esse texto pelo mesmo caminho do chat (POST /acompanha/mensagem)\nconst cab = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };\nmsg.headers = cab;\nconst t = String(msg.transcricao || '').trim();\nif (msg.erroStt || !t) {\n    msg.statusCode = msg.erroStt ? 502 : 422;\n    msg.payload = { erro: msg.erroStt ? 'Não consegui transcrever agora.' : 'Não entendi o que foi dito.', texto: '' };\n    return msg;\n}\nmsg.statusCode = 200;\nmsg.payload = { texto: t };\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1000,
+    "y": 2140,
+    "wires": [
+      [
+        "ac_tr_res"
+      ]
+    ]
+  },
+  {
+    "id": "ac_tr_res",
+    "type": "http response",
+    "z": "tab_acompanha",
+    "name": "",
+    "statusCode": "",
+    "headers": {},
+    "x": 1220,
+    "y": 2140,
+    "wires": []
+  }
+]

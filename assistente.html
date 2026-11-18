@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Montserrat:wght@800&amp;family=Atkinson+Hyperlegible:wght@400;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/assistente.css">
 </head>
 <body>
   <header class="cabecalho">
@@ -33,10 +34,61 @@
   </header>
 
   <main>
-    <!-- Página da solução 2: Converse com o assistente (Webchat)-->
-    <section class="secao">
-      <h1 class="titulo-pagina">Converse com o assistente</h1>
-    </section>
+    <!-- Página da solução 2: Webchat do chatbot. Tudo aqui foi feito para cumprir o requisito
+         de AI & Chatbot: Webchat em texto ligado ao fluxo do Node-RED (chatbot/). -->
+    <div class="hero">
+      <div class="hero__texto">
+        <p class="sobretitulo">Webchat do chatbot</p>
+        <h1 class="titulo-pagina">Converse com o assistente</h1>
+        <p class="texto-destaque">Este é o mesmo chatbot do Telegram, direto no navegador. Entre com o seu nome e escreva ou fale.</p>
+
+        <div class="pilar pilar--destaque">
+          <h2 class="pilar__titulo">Como o chatbot funciona</h2>
+          <p class="texto-suave">Esta página é o Webchat do chatbot e foi feita para cumprir os requisitos de AI &amp; Chatbot da Global Solution. Ele entende 5 intenções (remédio, confirmar dose, consulta, pedir ajuda e falar com a família) e 5 entidades por IA, no Node-RED, com contexto por conversa.</p>
+        </div>
+        <div class="pilar">
+          <h2 class="pilar__titulo">Prefere o Telegram?</h2>
+          <p class="texto-suave">Lá o Acompanha também manda os lembretes de remédio e avisa a família, por áudio.</p>
+          <a class="botao botao--secundario link-telegram" href="https://t.me/AcompanhaBot" target="_blank" rel="noopener noreferrer">Abrir no Telegram</a>
+        </div>
+      </div>
+
+      <div class="hero__visual">
+        <section class="conversa chat" aria-labelledby="chat-titulo">
+          <header class="conversa__topo">
+            <img class="conversa__avatar" src="assets/icons/icone-rosto.png" alt="" width="48" height="48">
+            <span class="conversa__nome chat__topo-nome">
+              <strong id="chat-titulo">Acompanha</strong>
+              <span id="chat-status">Conectando...</span>
+            </span>
+            <button class="botao botao--secundario chat__sair escondido" id="chat-sair" type="button">Sair</button>
+          </header>
+
+          <ol class="chat__mensagens" id="chat-mensagens" aria-live="polite" aria-label="Conversa com o Acompanha"></ol>
+
+          <div>
+            <div id="chat-acoes" class="escondido">
+              <button class="botao botao--assistente microfone" id="microfone" type="button" aria-pressed="false">
+                <span aria-hidden="true">&#127908;</span> <span id="microfone-texto">Toque aqui e fale</span>
+              </button>
+              <div class="botoes chat__sugestoes" role="group" aria-label="Sugestões de mensagem">
+                <button class="botao botao--secundario sugestao" type="button">Já tomei</button>
+                <button class="botao botao--secundario sugestao" type="button">Minhas consultas</button>
+                <button class="botao botao--secundario sugestao" type="button">Preciso de ajuda</button>
+                <button class="botao botao--secundario sugestao" type="button">Falar com a família</button>
+              </div>
+            </div>
+
+            <form class="chat__form" id="chat-form" novalidate>
+              <label class="oculto" for="chat-texto">Sua mensagem</label>
+              <input class="campo__entrada" id="chat-texto" type="text" maxlength="500" autocomplete="off" placeholder="Digite o seu nome para entrar">
+              <button class="botao botao--assistente" id="chat-enviar" type="submit">Enviar</button>
+            </form>
+            <p class="chat__erro" id="chat-erro" role="alert"></p>
+          </div>
+        </section>
+      </div>
+    </div>
   </main>
 
   <footer class="rodape">
@@ -52,5 +104,7 @@
   </footer>
 
   <script src="js/script.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/assistente.js"></script>
 </body>
 </html>
