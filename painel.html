@@ -33,10 +33,132 @@
   </header>
 
   <main>
-    <!-- Página da solução 1: Painel da família-->
-    <section class="secao">
-      <h1 class="titulo-pagina">Painel da família</h1>
-    </section>
+    <!-- Página da solução 1: Painel da família -->
+    <!-- Os dados são de exemplo: o painel ainda não está ligado ao chatbot -->
+    <div class="painel">
+      <div class="painel__cabecalho">
+        <div class="painel__identificacao">
+          <p class="texto-suave">Painel de Ana · acompanhando</p>
+          <h1 class="titulo-pagina">Hilda, 78 anos</h1>
+        </div>
+        <button type="button" class="botao botao--destaque botao--pequeno" id="abrir-modal">+ Adicionar remédio</button>
+      </div>
+
+      <ul class="resumo">
+        <li class="resumo__item">
+          <span class="resumo__rotulo">Doses hoje</span>
+          <strong class="resumo__valor">2 de 3</strong>
+        </li>
+        <li class="resumo__item">
+          <span class="resumo__rotulo">Adesão na semana</span>
+          <strong class="resumo__valor resumo__valor--dado">81%</strong>
+        </li>
+        <li class="resumo__item">
+          <span class="resumo__rotulo">Próxima consulta</span>
+          <strong class="resumo__valor resumo__valor--texto">Qui, 14h · UBS Vila Mariana</strong>
+        </li>
+      </ul>
+
+      <div class="painel__colunas">
+        <section class="cartao cartao--largo" aria-labelledby="titulo-hoje">
+          <div class="cartao__topo">
+            <h2 class="cartao__titulo" id="titulo-hoje">Remédios de hoje</h2>
+            <div class="filtros" role="group" aria-label="Filtrar remédios">
+              <button type="button" class="filtro filtro--ativo" data-status="todos" aria-pressed="true">Todos</button>
+              <button type="button" class="filtro" data-status="pendente" aria-pressed="false">Pendentes</button>
+              <button type="button" class="filtro" data-status="confirmado" aria-pressed="false">Confirmados</button>
+            </div>
+          </div>
+
+          <ul class="remedios">
+            <li class="remedio" data-status="confirmado">
+              <strong class="remedio__hora">08:00</strong>
+              <div class="remedio__textos">
+                <strong>Losartana 50mg</strong>
+                <span>1 comprimido · pressão</span>
+              </div>
+              <span class="etiqueta etiqueta--ok">Confirmado às 8h04 por áudio</span>
+            </li>
+            <li class="remedio" data-status="confirmado">
+              <strong class="remedio__hora">12:00</strong>
+              <div class="remedio__textos">
+                <strong>Metformina 850mg</strong>
+                <span>1 comprimido · após o almoço</span>
+              </div>
+              <span class="etiqueta etiqueta--ok">Confirmado às 12h20</span>
+            </li>
+            <li class="remedio" data-status="confirmado">
+              <strong class="remedio__hora">14:00</strong>
+              <div class="remedio__textos">
+                <strong>Consulta UBS</strong>
+                <span>Lembrete enviado às 13h</span>
+              </div>
+              <span class="etiqueta etiqueta--ok">Confirmado</span>
+            </li>
+            <li class="remedio" data-status="pendente">
+              <strong class="remedio__hora">20:00</strong>
+              <div class="remedio__textos">
+                <strong>Sinvastatina 20mg</strong>
+                <span>1 comprimido · colesterol</span>
+              </div>
+              <span class="etiqueta etiqueta--alerta">Sem resposta</span>
+            </li>
+          </ul>
+        </section>
+
+        <section class="cartao cartao--estreito" aria-labelledby="titulo-semana">
+          <h2 class="cartao__titulo" id="titulo-semana">Últimos 7 dias</h2>
+          <!-- São 3 doses por dia: a classe barra--N (1 a 3) define a altura -->
+          <div class="grafico" role="img" aria-label="Doses confirmadas por dia: segunda 3, terça 3, quarta 2, quinta 3, sexta 1, sábado 3, domingo 2, de 3 por dia">
+            <div class="grafico__dia"><span class="barra barra--3"></span><span class="grafico__rotulo">Seg</span></div>
+            <div class="grafico__dia"><span class="barra barra--3"></span><span class="grafico__rotulo">Ter</span></div>
+            <div class="grafico__dia"><span class="barra barra--2"></span><span class="grafico__rotulo">Qua</span></div>
+            <div class="grafico__dia"><span class="barra barra--3"></span><span class="grafico__rotulo">Qui</span></div>
+            <div class="grafico__dia"><span class="barra barra--1 barra--alerta"></span><span class="grafico__rotulo">Sex</span></div>
+            <div class="grafico__dia"><span class="barra barra--3"></span><span class="grafico__rotulo">Sáb</span></div>
+            <div class="grafico__dia"><span class="barra barra--2"></span><span class="grafico__rotulo">Dom</span></div>
+          </div>
+          <p class="cartao__nota"><span class="texto-alerta">2 esquecimentos</span> na sexta. O padrão é avisado à família quando se repete.</p>
+        </section>
+      </div>
+
+      <div class="aviso" role="status">
+        <div class="aviso__conteudo">
+          <span class="aviso__icone" aria-hidden="true">!</span>
+          <div class="aviso__textos">
+            <strong>Sinvastatina das 20h não foi confirmada</strong>
+            <span>O assistente perguntou 2 vezes. Última tentativa há 35 min.</span>
+          </div>
+        </div>
+        <a class="aviso__botao" href="tel:+5511999999999">Ligar para Hilda</a>
+      </div>
+    </div>
+
+    <!-- Modal nativo do HTML: abre com showModal() no script.js -->
+    <dialog class="modal" id="modal-remedio" aria-labelledby="titulo-modal">
+      <form class="modal__formulario" method="dialog">
+        <h2 class="cartao__titulo" id="titulo-modal">Adicionar remédio</h2>
+        <label class="campo" for="remedio-nome">Nome do remédio
+          <input class="campo__entrada" type="text" id="remedio-nome" name="nome" placeholder="Ex: Losartana">
+        </label>
+        <div class="modal__linha">
+          <label class="campo" for="remedio-dose">Dose
+            <input class="campo__entrada" type="text" id="remedio-dose" name="dose" placeholder="1 comprimido">
+          </label>
+          <label class="campo" for="remedio-horario">Horário
+            <input class="campo__entrada" type="time" id="remedio-horario" name="horario" value="08:00">
+          </label>
+        </div>
+        <label class="modal__opcao" for="remedio-aviso">
+          <input type="checkbox" id="remedio-aviso" name="aviso" checked>
+          Avisar a família se não confirmar em 30 min
+        </label>
+        <div class="modal__botoes">
+          <button type="submit" class="botao botao--secundario botao--pequeno" value="cancelar">Cancelar</button>
+          <button type="submit" class="botao botao--assistente botao--pequeno" value="salvar">Salvar lembrete</button>
+        </div>
+      </form>
+    </dialog>
   </main>
 
   <footer class="rodape">
