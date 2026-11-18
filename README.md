@@ -25,7 +25,8 @@ O **Acompanha** resolve esse problema invertendo a lógica de uso:
 | **Integrantes** | `integrantes.html` | Nome, RM, turma, foto, função, GitHub e LinkedIn de cada integrante. |
 | **Contato** | `contato.html` | Dados de contato da equipe e formulário (nome, e-mail, assunto e mensagem). |
 | **Painel da família** | `painel.html` | *Página da solução 1* — alertas, remédios do dia, gráfico da semana e modal para adicionar remédio (dados de exemplo) |
-| **Assistente** | `assistente.html` | *Página da solução 2* (Webchat) — botão "Testar o assistente" no menu; conteúdo a desenvolver. |
+| **Assistente** | `assistente.html` | *Página da solução 2*: **Webchat do chatbot** (botão "Testar o assistente" no menu). Ver a seção "Chatbot e Webchat" abaixo. |
+
 
 ---
 
