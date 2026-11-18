@@ -1,0 +1,136 @@
+/* ==========================================================================
+   Acompanha — assistente.css (Webchat do chatbot)
+   Só o que o style.css ainda não tem. O resto vem dele: .hero, .conversa,
+   .balao, .botao, .campo__entrada, .pilar, .escondido.
+   ========================================================================== */
+
+/* Texto só para leitor de tela (o label do campo) */
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+/* .conversa maior e com altura fixa: só a lista de mensagens rola */
+.chat {
+  max-width: 34rem;
+  height: 42rem;
+  max-height: calc(100vh - 2rem);
+}
+
+.pilar .botao {
+  align-self: flex-start;
+}
+
+.chat__topo-nome {
+  flex: 1;
+}
+
+.chat__sair {
+  padding: 0.5rem 0.875rem;
+  font-size: 0.9375rem;
+}
+
+.chat__offline {
+  color: var(--cor-destaque-texto);
+}
+
+.chat__mensagens {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.chat .balao {
+  max-width: 90%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Pedido de ajuda: laranja, só para alerta */
+.balao--alerta {
+  background: #FFEDD5;
+  border: 2px solid var(--cor-destaque);
+  color: var(--cor-destaque-texto);
+}
+
+.balao--digitando {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.balao--digitando span {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--cor-assistente);
+  animation: pulo 1s infinite;
+}
+
+.balao--digitando span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.balao--digitando span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes pulo {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* Botão grande de falar */
+.microfone {
+  width: 100%;
+  font-size: 1.25rem;
+}
+
+.microfone--ouvindo {
+  background: var(--cor-destaque-texto);
+  border-color: var(--cor-destaque-texto);
+}
+
+.chat__sugestoes {
+  margin: 0.75rem 0;
+}
+
+.sugestao {
+  padding: 0.5rem 1rem;
+  font-size: 0.9375rem;
+}
+
+.chat__form {
+  display: flex;
+  gap: 0.625rem;
+}
+
+.chat__form .campo__entrada {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat__erro {
+  margin-top: 0.5rem;
+  color: var(--cor-destaque-texto);
+  font-weight: 700;
+}
+
+.chat__erro:empty {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .balao--digitando span {
+    animation: none;
+  }
+}
