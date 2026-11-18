@@ -1,7 +1,7 @@
 # 🩺 Acompanha — Assistente por Voz para Idosos
 
 > **Tecnologia que fala a língua de quem mais precisa de cuidado.**
-> Projeto desenvolvido pela equipe **CitizenTech** (Turma **1TDSPR** — Análise e Desenvolvimento de Sistemas, FIAP) para a **Global Solution 2026**.
+> Projeto desenvolvido pela equipe **FIAPOS** (Turma **1TDSPR** — Análise e Desenvolvimento de Sistemas, FIAP) para a **Global Solution 2026**, com a temática **CitizenTech**: *"Tecnologia com o cidadão no centro da inovação"*.
 
 ## 📋 Sobre o Projeto
 
@@ -24,7 +24,7 @@ O **Acompanha** resolve esse problema invertendo a lógica de uso:
 | **FAQ** | `faq.html` | Perguntas frequentes com filtro por tema e acordeão. |
 | **Integrantes** | `integrantes.html` | Nome, RM, turma, foto, função, GitHub e LinkedIn de cada integrante. |
 | **Contato** | `contato.html` | Dados de contato da equipe e formulário (nome, e-mail, assunto e mensagem). |
-| **Painel da família** | `painel.html` | *Página da solução 1* — já no menu; conteúdo a desenvolver. |
+| **Painel da família** | `painel.html` | *Página da solução 1* — alertas, remédios do dia, gráfico da semana e modal para adicionar remédio (dados de exemplo). |
 | **Assistente** | `assistente.html` | *Página da solução 2* (Webchat) — botão "Testar o assistente" no menu; conteúdo a desenvolver. |
 
 ---
@@ -65,7 +65,7 @@ acompanha/
 ├── faq.html
 ├── integrantes.html
 ├── contato.html
-├── painel.html                      # Página da solução 1 (a desenvolver)
+├── painel.html                      # Página da solução 1 (painel da família)
 ├── assistente.html                  # Página da solução 2 (a desenvolver)
 ├── README.md
 ├── .gitignore
@@ -91,12 +91,16 @@ acompanha/
 
 | Nome completo | RM | Turma | GitHub | LinkedIn |
 | :--- | :--- | :--- | :--- | :--- |
-| João Pedro Estrutti Amaral | 575088 | 1TDSPR | [GitHub](https://github.com/EstruttiJP) | [LinkedIn](https://www.linkedin.com/in/joao-pedro-estrutti/) |
-| Lucas Lino | 574843 | 1TDSPR | [GitHub](https://github.com/linorepos) | [LinkedIn](https://www.linkedin.com/in/lucas230lino) |
-| Munir Assis | 569917 | 1TDSPR | [GitHub](https://github.com/MunirAssis) | [LinkedIn](https://www.linkedin.com/in/munir-f-assis) |
-| João Tinem  | 576501 | 1TDSPR | [GitHub](https://github.com/JoaoVitorTinem) | [LinkedIn](https://www.linkedin.com/in/joão-vitor-tinem-35bbb4442) |
+| João Pedro Estrutti Amaral | 575088 | 1TDSPR | <a href="https://github.com/EstruttiJP" target="_blank" rel="noopener noreferrer">GitHub</a> | <a href="https://www.linkedin.com/in/joao-pedro-estrutti/" target="_blank" rel="noopener noreferrer">LinkedIn</a> |
+| Lucas Lino | 574843 | 1TDSPR | <a href="https://github.com/linorepos" target="_blank" rel="noopener noreferrer">GitHub</a> | <a href="https://www.linkedin.com/in/lucas230lino" target="_blank" rel="noopener noreferrer">LinkedIn</a> |
+| Munir Assis | 569917 | 1TDSPR | <a href="https://github.com/MunirAssis" target="_blank" rel="noopener noreferrer">GitHub</a> | <a href="https://www.linkedin.com/in/munir-f-assis" target="_blank" rel="noopener noreferrer">LinkedIn</a> |
+| João Tinem  | 576501 | 1TDSPR | <a href="https://github.com/JoaoVitorTinem" target="_blank" rel="noopener noreferrer">GitHub</a> | <a href="https://www.linkedin.com/in/jo%C3%A3o-vitor-tinem-35bbb4442" target="_blank" rel="noopener noreferrer">LinkedIn</a> |
 
 ---
+
+## 🌐 Site
+
+<a href="https://linorepos.github.io/acompanha-frontend/" target="_blank" rel="noopener noreferrer">https://linorepos.github.io/acompanha-frontend/</a>
 
 ## 🔗 Repositório
 
