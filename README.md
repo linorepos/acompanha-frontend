@@ -92,37 +92,37 @@ Para abrir o site por HTTPS (GitHub Pages), o Node-RED também precisa estar em 
 ## 📁 Estrutura de Pastas
 
 ```
-acompanha/
-├── index.html
-├── sobre.html
-├── faq.html
-├── integrantes.html
-├── contato.html
-├── painel.html                      # Página da solução 1: Painel da família
-├── assistente.html                  # Página da solução 2: Webchat do chatbot
+acompanha-frontend/
+├── index.html                          # Início: conversa de exemplo, como funciona e prévia da FAQ
+├── sobre.html                          # Problema, objetivo, proposta, público e tecnologias
+├── painel.html                         # Solução 1: Painel da família (remédios, gráfico e alertas)
+├── assistente.html                     # Solução 2: Webchat do chatbot
+├── faq.html                            # Perguntas frequentes com filtro por tema
+├── integrantes.html                    # Equipe com foto, RM, GitHub e LinkedIn
+├── contato.html                        # Dados da equipe e formulário de contato
 ├── README.md
-├── .gitignore
+├── .gitignore                          # Ignora arquivos do sistema/editor e segredos do chatbot
 ├── chatbot/
 │   └── acompanha_chatbot_nodered.json  # Fluxo do chatbot no Node-RED (sem chaves)
 ├── css/
-│   ├── style.css                    # Estilos de todas as páginas, organizados por seção
-│   └── assistente.css               # Estilos do Webchat do chatbot
+│   ├── style.css                       # Estilos de todas as páginas, organizados por seção
+│   └── assistente.css                  # Estilos do Webchat do chatbot
 ├── js/
-│   ├── script.js                    # Filtro da FAQ (menu e validação entram depois)
-│   ├── config.js                    # Endereço do Node-RED e link do Telegram
-│   └── assistente.js                # Webchat: conversa com o Node-RED
+│   ├── script.js                       # Filtro da FAQ, filtro de remédios e modal do painel
+│   ├── config.js                       # Endereço do Node-RED e link do Telegram
+│   └── assistente.js                   # Webchat: conversa com o Node-RED
 └── assets/
     ├── images/
-    │   ├── logo-acompanha@1x.png     # Logo completo do cabeçalho (telas comuns)
-    │   ├── logo-acompanha@2x.png     # Mesmo logo para telas de alta densidade
-    │   ├── logo-acompanha@3x.png     # Mesmo logo para telas de densidade muito alta
-    │   ├── logo-acompanha-branco.png # Versão para fundo escuro
-    │   ├── logo-texto-branco.png     # Texto "Acompanha" do rodapé
-    │   └── integrantes/              # Fotos dos integrantes
+    │   ├── logo-acompanha@1x.png       # Logo completo do cabeçalho (telas comuns)
+    │   ├── logo-acompanha@2x.png       # Mesmo logo para telas de alta densidade
+    │   ├── logo-acompanha@3x.png       # Mesmo logo para telas de densidade muito alta
+    │   ├── logo-acompanha-branco.png   # Versão para fundo escuro
+    │   ├── logo-texto-branco.png       # Texto "Acompanha" do rodapé
+    │   └── integrantes/                # Fotos dos integrantes
     └── icons/
-        ├── favicon.png               # Ícone da aba do navegador
-        ├── icone-rosto.png           # Rosto do Acompanha
-        └── icone-conectividade.png   # Ondas de voz
+        ├── favicon.png                 # Ícone da aba do navegador
+        ├── icone-rosto.png             # Rosto do Acompanha
+        └── icone-conectividade.png     # Ondas de voz
 ```
 
 ## 👥 Autores
