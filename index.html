@@ -18,7 +18,10 @@
              srcset="assets/images/logo-acompanha@1x.png 1x, assets/images/logo-acompanha@2x.png 2x, assets/images/logo-acompanha@3x.png 3x"
              alt="Acompanha — início" width="193" height="32">
       </a>
-      <nav aria-label="Menu principal">
+      <button class="menu-botao" type="button" aria-expanded="false" aria-controls="navegacao" aria-label="Abrir menu">
+        <img src="assets/icons/icone-conectividade.png" alt="" width="74" height="96">
+      </button>
+      <nav class="navegacao" id="navegacao" aria-label="Menu principal">
         <ul class="menu">
           <li><a class="menu__link menu__link--ativo" href="index.html" aria-current="page">Início</a></li>
           <li><a class="menu__link" href="sobre.html">Sobre</a></li>
@@ -112,7 +115,7 @@
     <section class="faixa-branca" aria-labelledby="titulo-faq">
       <div class="faq-previa">
         <h2 class="titulo-secao" id="titulo-faq">Perguntas frequentes</h2>
-        <!-- Acordeão nativo do HTML: o atributo name deixa só uma pergunta aberta por vez -->
+        <!-- name: só uma pergunta aberta por vez -->
         <div class="faq-previa__lista">
           <details class="pergunta" name="faq-inicio" open>
             <summary class="pergunta__titulo">O idoso precisa saber usar celular?</summary>
@@ -148,6 +151,6 @@
     </div>
   </footer>
 
-  <script src="js/script.js"></script>
+  <script src="js/menu.js"></script>
 </body>
 </html>
