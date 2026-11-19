@@ -18,7 +18,10 @@
              srcset="assets/images/logo-acompanha@1x.png 1x, assets/images/logo-acompanha@2x.png 2x, assets/images/logo-acompanha@3x.png 3x"
              alt="Acompanha — início" width="193" height="32">
       </a>
-      <nav aria-label="Menu principal">
+      <button class="menu-botao" type="button" aria-expanded="false" aria-controls="navegacao" aria-label="Abrir menu">
+        <img src="assets/icons/icone-conectividade.png" alt="" width="74" height="96">
+      </button>
+      <nav class="navegacao" id="navegacao" aria-label="Menu principal">
         <ul class="menu">
           <li><a class="menu__link" href="index.html">Início</a></li>
           <li><a class="menu__link" href="sobre.html">Sobre</a></li>
@@ -47,41 +50,57 @@
             <p class="integrante__rm">RM 575088 · 1TDSPR</p>
           </div>
           <ul class="integrante__links">
-            <li><a class="link-github" href="https://github.com/EstruttiJP" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-            <li><a class="link-linkedin" href="https://www.linkedin.com/in/joao-pedro-estrutti/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+            <li><a class="link-github" href="https://github.com/EstruttiJP" target="_blank" rel="noopener noreferrer" aria-label="GitHub de João Pedro Estrutti Amaral">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"></path></svg>
+              </a></li>
+            <li><a class="link-linkedin" href="https://www.linkedin.com/in/joao-pedro-estrutti/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn de João Pedro Estrutti Amaral">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+              </a></li>
           </ul>
         </li>
         <li class="integrante">
-          <img class="integrante__foto" src="assets/images/integrantes/lucas-lino.png" alt="Foto de Lucas Lino" width="120" height="120">
+          <img class="integrante__foto" src="assets/images/integrantes/lucas-lino.png" alt="Foto de Lucas Miguel Lino" width="120" height="120">
           <div class="integrante__dados">
-            <h2 class="integrante__nome">Lucas Lino</h2>
+            <h2 class="integrante__nome">Lucas Miguel Lino</h2>
             <p class="integrante__rm">RM 574843 · 1TDSPR</p>
           </div>
           <ul class="integrante__links">
-            <li><a class="link-github" href="https://github.com/linorepos" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-            <li><a class="link-linkedin" href="https://www.linkedin.com/in/lucas230lino" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+            <li><a class="link-github" href="https://github.com/linorepos" target="_blank" rel="noopener noreferrer" aria-label="GitHub de Lucas Miguel Lino">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"></path></svg>
+              </a></li>
+            <li><a class="link-linkedin" href="https://www.linkedin.com/in/lucas230lino" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn de Lucas Miguel Lino">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+              </a></li>
           </ul>
         </li>
         <li class="integrante">
-          <img class="integrante__foto" src="assets/images/integrantes/munir.jpeg" alt="Foto de Munir Assis" width="120" height="120">
+          <img class="integrante__foto" src="assets/images/integrantes/munir.jpeg" alt="Foto de Munir Foresti Assis" width="120" height="120">
           <div class="integrante__dados">
-            <h2 class="integrante__nome">Munir Assis</h2>
+            <h2 class="integrante__nome">Munir Foresti Assis</h2>
             <p class="integrante__rm">RM 569917 · 1TDSPR</p>
           </div>
           <ul class="integrante__links">
-            <li><a class="link-github" href="https://github.com/MunirAssis" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-            <li><a class="link-linkedin" href="https://www.linkedin.com/in/munir-f-assis" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+            <li><a class="link-github" href="https://github.com/MunirAssis" target="_blank" rel="noopener noreferrer" aria-label="GitHub de Munir Foresti Assis">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"></path></svg>
+              </a></li>
+            <li><a class="link-linkedin" href="https://www.linkedin.com/in/munir-f-assis" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn de Munir Foresti Assis">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+              </a></li>
           </ul>
         </li>
         <li class="integrante">
-          <img class="integrante__foto" src="assets/images/integrantes/joao-tinem.jpeg" alt="Foto de João Tinem" width="120" height="120">
+          <img class="integrante__foto" src="assets/images/integrantes/joao-tinem.jpeg" alt="Foto de João Vitor Tinem Silva" width="120" height="120">
           <div class="integrante__dados">
-            <h2 class="integrante__nome">João Tinem</h2>
+            <h2 class="integrante__nome">João Vitor Tinem Silva</h2>
             <p class="integrante__rm">RM 576501 · 1TDSPR</p>
           </div>
           <ul class="integrante__links">
-            <li><a class="link-github" href="https://github.com/JoaoVitorTinem" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-            <li><a class="link-linkedin" href="https://www.linkedin.com/in/jo%C3%A3o-vitor-tinem-35bbb4442" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+            <li><a class="link-github" href="https://github.com/JoaoVitorTinem" target="_blank" rel="noopener noreferrer" aria-label="GitHub de João Vitor Tinem Silva">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"></path></svg>
+              </a></li>
+            <li><a class="link-linkedin" href="https://www.linkedin.com/in/jo%C3%A3o-vitor-tinem-35bbb4442" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn de João Vitor Tinem Silva">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+              </a></li>
           </ul>
         </li>
       </ul>
@@ -100,6 +119,6 @@
     </div>
   </footer>
 
-  <script src="js/script.js"></script>
+  <script src="js/menu.js"></script>
 </body>
 </html>
