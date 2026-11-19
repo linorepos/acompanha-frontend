@@ -21,12 +21,43 @@ O **Acompanha** resolve esse problema invertendo a lógica de uso:
 | :--- | :--- | :--- |
 | **Início** | `index.html` | Identificação da solução, exemplo de conversa no Telegram, "Como funciona", "Por que isso importa" e prévia da FAQ. |
 | **Sobre** | `sobre.html` | Problema, objetivo, proposta, público-alvo e tecnologias da solução. |
-| **FAQ** | `faq.html` | Perguntas frequentes com filtro por tema e acordeão. |
-| **Integrantes** | `integrantes.html` | Nome, RM, turma, foto, função, GitHub e LinkedIn de cada integrante. |
-| **Contato** | `contato.html` | Dados de contato da equipe e formulário (nome, e-mail, assunto e mensagem). |
-| **Painel da família** | `painel.html` | *Página da solução 1* — alertas, remédios do dia, gráfico da semana e modal para adicionar remédio (dados de exemplo) |
+| **FAQ** | `faq.html` | Perguntas frequentes em acordeão, com filtro por tema (para o idoso, para a família e sobre o projeto). |
+| **Integrantes** | `integrantes.html` | Nome completo, RM, turma, foto, GitHub e LinkedIn de cada integrante. |
+| **Contato** | `contato.html` | E-mail da equipe, link do repositório e formulário (nome, e-mail, assunto e mensagem) com validação em JavaScript. |
+| **Painel da família** | `painel.html` | *Página da solução 1*: resumo do dia, lembretes de hoje com filtro, gráfico dos últimos 7 dias e alerta de dose não confirmada. Dá para **adicionar** lembretes (remédio ou consulta) por um modal e **remover** cada um (dados de exemplo, sem salvar). |
 | **Assistente** | `assistente.html` | *Página da solução 2*: **Webchat do chatbot** (botão "Testar o assistente" no menu). Ver a seção "Chatbot e Webchat" abaixo. |
 
+
+---
+
+## 🖼️ Imagens do Projeto
+
+<p align="center">
+  <img src="docs/prints/desktop-inicio.png" alt="Página inicial do Acompanha no desktop, com o exemplo de conversa no Telegram" width="88%">
+</p>
+<p align="center"><sub><b>Início</b> · desktop</sub></p>
+
+<p align="center">
+  <img src="docs/prints/desktop-como-funciona.png" alt="Seções Como funciona e Por que isso importa no desktop" width="49%">
+  <img src="docs/prints/desktop-painel.png" alt="Painel da família no desktop, com lembretes de hoje, gráfico da semana e alerta" width="49%">
+</p>
+<p align="center"><sub><b>Como funciona</b> e <b>Painel da família</b> · desktop</sub></p>
+
+<p align="center">
+  <img src="docs/prints/tablet-assistente.png" alt="Webchat do chatbot na página Assistente, no tablet" height="360">
+  &nbsp;
+  <img src="docs/prints/tablet-faq.png" alt="Por que isso importa e prévia da FAQ no tablet" height="360">
+</p>
+<p align="center"><sub><b>Assistente (Webchat)</b> e <b>Início</b> · tablet</sub></p>
+
+<p align="center">
+  <img src="docs/prints/mobile-inicio.png" alt="Início no celular, com botões na largura toda" height="360">
+  &nbsp;
+  <img src="docs/prints/mobile-menu.png" alt="Menu hambúrguer aberto no celular" height="360">
+  &nbsp;
+  <img src="docs/prints/mobile-integrantes.png" alt="Página de integrantes no celular" height="360">
+</p>
+<p align="center"><sub><b>Início</b>, <b>menu hambúrguer</b> e <b>Integrantes</b> · celular</sub></p>
 
 ---
 
@@ -65,13 +96,24 @@ Para abrir o site por HTTPS (GitHub Pages), o Node-RED também precisa estar em 
 ## 🛠️ Tecnologias Utilizadas
 
 ### Front-End (este repositório)
-* **HTML5 semântico:** `header`, `nav`, `main`, `section`, `article`, `footer`, `figure`, `details` e `summary`.
-* **CSS3:** arquivo externo, variáveis de cor e layout feito somente com **Flexbox**.
-* **JavaScript puro:** arquivos externos em `/js`: filtro de temas da FAQ (`script.js`) e Webchat do chatbot (`assistente.js`).
+* **HTML5 semântico:** `header`, `nav`, `main`, `section`, `article`, `footer`, `figure`, `dialog`, `details` e `summary`.
+* **CSS3:** arquivos externos em `/css`, variáveis de cor, unidades em `rem` e layout feito somente com **Flexbox** (sem Grid e sem frameworks).
+* **JavaScript puro:** arquivos externos em `/js`: menu hambúrguer em todas as páginas (`menu.js`) e um por página: filtro de temas da FAQ (`faq.js`), filtro, adicionar e remover lembretes no painel (`painel.js`), validação do contato com regex (`contato.js`) e Webchat do chatbot (`assistente.js`).
 * **Google Fonts:** *Manrope*, *Montserrat* e *Atkinson Hyperlegible*.
 
+### 📱 Responsividade
+* Media queries em **1440px** (desktop), **1024px** e **768px** (tablet) e **390px** (mobile).
+* Até 1024px o menu vira **hambúrguer** (ícone de conectividade do Acompanha), aberto e fechado por JavaScript com `aria-expanded`.
+* Sem rolagem horizontal e com margem lateral mínima de ~16px: nenhum elemento encosta na borda da tela.
+
+### ♿ Acessibilidade
+* Contraste de texto dentro do nível AA da WCAG (mínimo 4,5:1).
+* Foco visível na navegação por teclado, `aria-label` nos botões só com ícone e `alt` em todas as imagens.
+* Mensagens de erro do formulário ligadas aos campos com `aria-describedby`.
+* Animações curtas e desligadas para quem ativou "reduzir movimento" no sistema (`prefers-reduced-motion`).
+
 ### Ecossistema da solução (outras disciplinas)
-* **Chatbot e orquestração:** IBM watsonx Assistant + Node-RED + Telegram (áudio ↔ texto).
+* **Chatbot e orquestração:** Node-RED + LLM via Groq + Telegram (áudio ↔ texto com Whisper e Gemini TTS).
 * **Back-end e regras de negócio:** Java (DDD) e Python.
 * **Banco de dados:** modelo descritivo, DER e modelo lógico.
 
@@ -81,7 +123,7 @@ Para abrir o site por HTTPS (GitHub Pages), o Node-RED também precisa estar em 
 | Uso | Cor |
 | :--- | :--- |
 | Cor principal (azul-marinho sóbrio) | `#1E2F5E` |
-| Alerta (laranja, em detalhes: passo do alerta, "O problema", palavras de risco e foco do teclado) | `#F97316`  `#C2410C` |
+| Alerta: laranja claro em bordas e detalhes; laranja escuro em textos, botões e erros do formulário | `#F97316` · `#C2410C` |
 | Fundo (off-white) | `#F8FAFC` |
 | Texto principal (cinza-escuro) | `#1E293B` |
 | Assistente: botões "Testar / Conversar com o assistente" | `#0E7C74` |
@@ -102,13 +144,18 @@ acompanha-frontend/
 ├── contato.html                        # Dados da equipe e formulário de contato
 ├── README.md
 ├── .gitignore                          # Ignora arquivos do sistema/editor e segredos do chatbot
+├── docs/
+│   └── prints/                         # Mockups do site (desktop, tablet e celular) usados neste README
 ├── chatbot/
 │   └── acompanha_chatbot_nodered.json  # Fluxo do chatbot no Node-RED (sem chaves)
 ├── css/
 │   ├── style.css                       # Estilos de todas as páginas, organizados por seção
 │   └── assistente.css                  # Estilos do Webchat do chatbot
 ├── js/
-│   ├── script.js                       # Filtro da FAQ, filtro de remédios e modal do painel
+│   ├── menu.js                         # Menu hambúrguer (tablet e celular), em todas as páginas
+│   ├── faq.js                          # Filtro de temas da FAQ
+│   ├── painel.js                       # Filtro, adicionar e remover lembretes do painel
+│   ├── contato.js                      # Validação do formulário de contato
 │   ├── config.js                       # Endereço do Node-RED e link do Telegram
 │   └── assistente.js                   # Webchat: conversa com o Node-RED
 └── assets/
@@ -130,9 +177,9 @@ acompanha-frontend/
 | Nome completo | RM | Turma | GitHub | LinkedIn |
 | :--- | :--- | :--- | :--- | :--- |
 | João Pedro Estrutti Amaral | 575088 | 1TDSPR | <a href="https://github.com/EstruttiJP" target="_blank" rel="noopener noreferrer">GitHub</a> | <a href="https://www.linkedin.com/in/joao-pedro-estrutti/" target="_blank" rel="noopener noreferrer">LinkedIn</a> |
-| Lucas Lino | 574843 | 1TDSPR | <a href="https://github.com/linorepos" target="_blank" rel="noopener noreferrer">GitHub</a> | <a href="https://www.linkedin.com/in/lucas230lino" target="_blank" rel="noopener noreferrer">LinkedIn</a> |
-| Munir Assis | 569917 | 1TDSPR | <a href="https://github.com/MunirAssis" target="_blank" rel="noopener noreferrer">GitHub</a> | <a href="https://www.linkedin.com/in/munir-f-assis" target="_blank" rel="noopener noreferrer">LinkedIn</a> |
-| João Tinem  | 576501 | 1TDSPR | <a href="https://github.com/JoaoVitorTinem" target="_blank" rel="noopener noreferrer">GitHub</a> | <a href="https://www.linkedin.com/in/jo%C3%A3o-vitor-tinem-35bbb4442" target="_blank" rel="noopener noreferrer">LinkedIn</a> |
+| Lucas Miguel Lino | 574843 | 1TDSPR | <a href="https://github.com/linorepos" target="_blank" rel="noopener noreferrer">GitHub</a> | <a href="https://www.linkedin.com/in/lucas230lino" target="_blank" rel="noopener noreferrer">LinkedIn</a> |
+| Munir Foresti Assis | 569917 | 1TDSPR | <a href="https://github.com/MunirAssis" target="_blank" rel="noopener noreferrer">GitHub</a> | <a href="https://www.linkedin.com/in/munir-f-assis" target="_blank" rel="noopener noreferrer">LinkedIn</a> |
+| João Vitor Tinem Silva | 576501 | 1TDSPR | <a href="https://github.com/JoaoVitorTinem" target="_blank" rel="noopener noreferrer">GitHub</a> | <a href="https://www.linkedin.com/in/jo%C3%A3o-vitor-tinem-35bbb4442" target="_blank" rel="noopener noreferrer">LinkedIn</a> |
 
 ---
 
@@ -143,6 +190,12 @@ acompanha-frontend/
 ## 🔗 Repositório
 
 https://github.com/linorepos/acompanha-frontend
+
+## ▶️ Como Rodar o Site
+
+1. Clone o repositório: `git clone https://github.com/linorepos/acompanha-frontend.git`
+2. Abra a pasta no VS Code e rode `index.html` com a extensão **Live Server** (ou abra o arquivo direto no navegador).
+3. Só o Webchat (`assistente.html`) depende do Node-RED; as outras páginas funcionam sem nenhuma instalação.
 
 ## 📬 Contato
 
