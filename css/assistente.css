@@ -1,23 +1,19 @@
-/* ==========================================================================
-   Acompanha — assistente.css (Webchat do chatbot)
-   Só o que o style.css ainda não tem. O resto vem dele: .hero, .conversa,
-   .balao, .botao, .campo__entrada, .pilar, .escondido.
-   ========================================================================== */
+/* Acompanha — assistente.css: só o que o Webchat tem a mais que o style.css */
 
-/* Texto só para leitor de tela (o label do campo) */
-.oculto {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-}
-
-/* .conversa maior e com altura fixa: só a lista de mensagens rola */
 .chat {
   max-width: 34rem;
-  height: 42rem;
-  max-height: calc(100vh - 2rem);
+}
+
+.hero__texto .pilar {
+  flex: none;
+}
+
+/* Card "Prefere o Telegram?" */
+.hero__texto .pilar--destaque + .pilar {
+  padding: 1.5rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 1.25rem;
+  background: var(--cor-branco);
 }
 
 .pilar .botao {
@@ -38,8 +34,9 @@
 }
 
 .chat__mensagens {
-  flex: 1;
-  min-height: 0;
+  height: 20rem;
+  max-height: 50vh;
+  min-height: 12rem;
   margin: 0;
   padding: 0;
   display: flex;
@@ -55,7 +52,6 @@
   overflow-wrap: anywhere;
 }
 
-/* Pedido de ajuda: laranja, só para alerta */
 .balao--alerta {
   background: #FFEDD5;
   border: 2px solid var(--cor-destaque);
@@ -92,7 +88,8 @@
 /* Botão grande de falar */
 .microfone {
   width: 100%;
-  font-size: 1.25rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 1.0625rem;
 }
 
 .microfone--ouvindo {
@@ -101,7 +98,8 @@
 }
 
 .chat__sugestoes {
-  margin: 0.75rem 0;
+  gap: 0.5rem;
+  margin: 0.625rem 0;
 }
 
 .sugestao {
@@ -127,6 +125,17 @@
 
 .chat__erro:empty {
   display: none;
+}
+
+/* Responsividade do chat */
+@media (max-width: 390px) {
+  .chat__mensagens {
+    height: 16rem;
+  }
+
+  .chat .balao {
+    max-width: 95%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

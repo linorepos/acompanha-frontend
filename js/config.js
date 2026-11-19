@@ -1,17 +1,13 @@
-// Configuração do Webchat do Acompanha.
-// Troque os valores abaixo e o site passa a conversar com o Node-RED de verdade.
+// Configuração do Webchat: endereços do Node-RED e link do Telegram
 const ACOMPANHA_CONFIG = {
-  // Endereço do Webchat no fluxo do Node-RED (nó "POST /acompanha/mensagem").
-  // Com o Node-RED rodando no mesmo computador: http://localhost:1880/acompanha/mensagem
-  // Para apresentar de outro aparelho, use o endereço do túnel (ngrok, Cloudflare Tunnel...).
+  // Mensagens de texto (em outro aparelho, use o endereço do túnel HTTPS)
   apiUrl: 'http://localhost:1880/acompanha/mensagem',
 
-  // Endereço que transcreve o áudio gravado no Webchat (Whisper, no mesmo fluxo do Node-RED).
+  // Transcrição do áudio (Whisper)
   transcreverUrl: 'http://localhost:1880/acompanha/transcrever',
 
-  // Tempo máximo de espera pela resposta da IA, em milissegundos.
+  // Tempo máximo de espera, em ms
   tempoLimite: 20000,
 
-  // Link do bot no Telegram.
   telegramUrl: 'https://t.me/AcompanhaBot'
 };

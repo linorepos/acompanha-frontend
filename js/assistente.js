@@ -1,16 +1,4 @@
-/* ==========================================================================
-   Acompanha — assistente.js (Webchat do chatbot)
-
-   REQUISITO DE AI & CHATBOT: "Webchat em texto".
-   Tudo o que esta página faz existe para cumprir esse requisito: o chat
-   conversa com o MESMO chatbot do Telegram, o fluxo do Node-RED em
-   chatbot/acompanha_chatbot_nodered.json (intenção, entidades e contexto).
-
-   - Login: o chat pede o nome; ele identifica a pessoa e a sessão (contexto).
-   - Texto: POST em ACOMPANHA_CONFIG.apiUrl com {texto, sessao}.
-   - Voz: grava no navegador e o Node-RED transcreve (Whisper); a resposta
-     é lida em voz alta.
-   ========================================================================== */
+/* Acompanha — assistente.js: Webchat que conversa com o chatbot no Node-RED (texto e voz) */
 
 (function () {
   const lista = document.getElementById('chat-mensagens');
@@ -26,8 +14,8 @@
   const botaoSair = document.getElementById('chat-sair');
   const CHAVE_NOME = 'acompanha-nome';
 
-  let nome = '';       // quem entrou no chat
-  let sessao = '';     // o Node-RED guarda o contexto por sessão
+  let nome = '';
+  let sessao = '';     // contexto da conversa no Node-RED
   let enviando = false;
   let gravador = null;
 
@@ -73,11 +61,11 @@
     window.speechSynthesis.cancel();
     const fala = new SpeechSynthesisUtterance(texto);
     fala.lang = 'pt-BR';
-    fala.rate = 0.9;   // um pouco mais devagar, para quem ouve com calma
+    fala.rate = 0.9;   // fala mais devagar
     window.speechSynthesis.speak(fala);
   }
 
-  // Envia ao Node-RED. Qualquer falha vira uma mensagem clara: o chat nunca inventa resposta.
+  // Envia ao Node-RED; se falhar, avisa em vez de inventar resposta
   async function perguntar(texto) {
     const controle = new AbortController();
     const relogio = setTimeout(function () { controle.abort(); }, ACOMPANHA_CONFIG.tempoLimite);
@@ -143,7 +131,7 @@
     (porVoz ? botaoMic : campo).focus();
   }
 
-  // ---------- Login por chat: o primeiro passo da conversa é dizer o nome ----------
+  // Login: o chat pede o nome
   function perguntarNome() {
     adicionarMensagem('Olá! Eu sou o Acompanha. Para começar, qual é o seu nome?', 'assistente');
   }
@@ -159,7 +147,6 @@
     try {
       sessionStorage.setItem(CHAVE_NOME, nome);
     } catch (e) {
-      // sem armazenamento: vale só até recarregar
     }
     adicionarMensagem('Prazer, ' + nome + '! Posso lembrar seus remédios, suas consultas ou chamar alguém da família. Como posso ajudar?', 'assistente');
     acoes.classList.remove('escondido');
@@ -171,18 +158,17 @@
     try {
       sessionStorage.removeItem(CHAVE_NOME);
     } catch (e) {
-      // nada a limpar
     }
     nome = '';
     sessao = '';
     lista.textContent = '';
     acoes.classList.add('escondido');
     botaoSair.classList.add('escondido');
-    campo.placeholder = 'Digite o seu nome para entrar';
+    campo.placeholder = 'Seu nome';
     perguntarNome();
   }
 
-  // ---------- Voz: o navegador grava e o Node-RED transcreve (Whisper) ----------
+  // Voz: grava no navegador e o Node-RED transcreve
   function paraBase64(blob) {
     return new Promise(function (resolve, reject) {
       const leitor = new FileReader();
@@ -251,10 +237,10 @@
     mostrarEstadoMic('ouvindo');
   }
 
-  // ---------- Eventos ----------
+  // Eventos
   botaoMic.addEventListener('click', function () {
     if (gravador) {
-      gravador.stop();   // toque de novo para terminar e enviar
+      gravador.stop();
     } else if (!enviando) {
       iniciarGravacao();
     }
@@ -282,13 +268,12 @@
   perguntarNome();
   try {
     if (sessionStorage.getItem(CHAVE_NOME)) {
-      entrar(sessionStorage.getItem(CHAVE_NOME));   // quem já entrou nesta aba continua logado
+      entrar(sessionStorage.getItem(CHAVE_NOME));
     }
   } catch (e) {
-    // sem armazenamento: pede o nome de novo
   }
 
-  // Ao abrir, confere se o Node-RED responde (mensagem vazia volta 400, sem chamar a IA)
+  // Ao abrir, confere se o Node-RED está no ar
   fetch(ACOMPANHA_CONFIG.apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

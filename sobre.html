@@ -18,7 +18,10 @@
              srcset="assets/images/logo-acompanha@1x.png 1x, assets/images/logo-acompanha@2x.png 2x, assets/images/logo-acompanha@3x.png 3x"
              alt="Acompanha — início" width="193" height="32">
       </a>
-      <nav aria-label="Menu principal">
+      <button class="menu-botao" type="button" aria-expanded="false" aria-controls="navegacao" aria-label="Abrir menu">
+        <img src="assets/icons/icone-conectividade.png" alt="" width="74" height="96">
+      </button>
+      <nav class="navegacao" id="navegacao" aria-label="Menu principal">
         <ul class="menu">
           <li><a class="menu__link" href="index.html">Início</a></li>
           <li><a class="menu__link menu__link--ativo" href="sobre.html" aria-current="page">Sobre</a></li>
@@ -40,24 +43,30 @@
     </section>
 
     <section class="pilares" aria-label="Problema, objetivo e proposta">
-      <article class="pilar pilar--alerta">
-        <p class="pilar__rotulo">O problema</p>
-        <h2 class="pilar__titulo">Remédio esquecido, família sem saber</h2>
-        <p class="texto-suave">Idosos que moram sozinhos costumam tomar vários remédios por dia. Esquecer uma dose ou repetir outra é comum. Apps de lembrete exigem boa visão, coordenação motora e memória, e a família só descobre quando algo já deu errado.</p>
-      </article>
-      <article class="pilar">
-        <p class="pilar__rotulo">O objetivo</p>
-        <h2 class="pilar__titulo">Autonomia para o idoso, tranquilidade para a família</h2>
-        <p class="texto-suave">Garantir que cada dose seja lembrada e confirmada sem que o idoso precise aprender um app novo, e avisar a família no momento certo, antes que o esquecimento vire um problema.</p>
-      </article>
-      <article class="pilar pilar--destaque">
-        <p class="pilar__rotulo">A proposta</p>
-        <h2 class="pilar__titulo">Conversar em vez de clicar</h2>
-        <p class="texto-suave">O idoso recebe áudios no Telegram e responde falando. O assistente entende a resposta, registra a confirmação e, se não houver resposta ou ela for estranha, aciona o familiar. A família configura tudo por um painel simples.</p>
-      </article>
+      <details class="pilar pilar--alerta">
+        <summary class="pilar__resumo">
+          <span class="pilar__rotulo">O problema</span>
+          <h2 class="pilar__titulo">Remédio esquecido, família sem saber</h2>
+        </summary>
+        <p class="texto-suave pilar__texto">Idosos que moram sozinhos costumam tomar vários remédios por dia. Esquecer uma dose ou repetir outra é comum. Apps de lembrete exigem boa visão, coordenação motora e memória, e a família só descobre quando algo já deu errado.</p>
+      </details>
+      <details class="pilar">
+        <summary class="pilar__resumo">
+          <span class="pilar__rotulo">O objetivo</span>
+          <h2 class="pilar__titulo">Autonomia para o idoso, tranquilidade para a família</h2>
+        </summary>
+        <p class="texto-suave pilar__texto">Garantir que cada dose seja lembrada e confirmada sem que o idoso precise aprender um app novo, e avisar a família no momento certo, antes que o esquecimento vire um problema.</p>
+      </details>
+      <details class="pilar pilar--destaque">
+        <summary class="pilar__resumo">
+          <span class="pilar__rotulo">A proposta</span>
+          <h2 class="pilar__titulo">Conversar em vez de clicar</h2>
+        </summary>
+        <p class="texto-suave pilar__texto">O idoso recebe áudios no Telegram e responde falando. O assistente entende a resposta, registra a confirmação e, se não houver resposta ou ela for estranha, aciona o familiar. A família configura tudo por um painel simples.</p>
+      </details>
     </section>
 
-    <section class="faixa-branca" aria-labelledby="titulo-publico">
+    <section class="faixa-destaque" aria-labelledby="titulo-publico">
       <div class="secao publico">
         <h2 class="titulo-secao" id="titulo-publico">Para quem é</h2>
         <div class="publico__lista">
@@ -89,8 +98,8 @@
           <span>Orquestra as mensagens, o áudio (fala ↔ texto) e os alertas.</span>
         </li>
         <li class="tecnologia">
-          <strong>IBM watsonx Assistant</strong>
-          <span>Chatbot com 5 intenções e 5 entidades, no Webchat e no Telegram.</span>
+          <strong>LLM via Groq</strong>
+          <span>Inteligência do chatbot: entende 5 intenções e 5 entidades, no Webchat e no Telegram.</span>
         </li>
         <li class="tecnologia">
           <strong>Java + Python</strong>
@@ -116,6 +125,6 @@
     </div>
   </footer>
 
-  <script src="js/script.js"></script>
+  <script src="js/menu.js"></script>
 </body>
 </html>

@@ -19,7 +19,10 @@
              srcset="assets/images/logo-acompanha@1x.png 1x, assets/images/logo-acompanha@2x.png 2x, assets/images/logo-acompanha@3x.png 3x"
              alt="Acompanha — início" width="120" height="32">
       </a>
-      <nav aria-label="Menu principal">
+      <button class="menu-botao" type="button" aria-expanded="false" aria-controls="navegacao" aria-label="Abrir menu">
+        <img src="assets/icons/icone-conectividade.png" alt="" width="74" height="96">
+      </button>
+      <nav class="navegacao" id="navegacao" aria-label="Menu principal">
         <ul class="menu">
           <li><a class="menu__link" href="index.html">Início</a></li>
           <li><a class="menu__link" href="sobre.html">Sobre</a></li>
@@ -34,18 +37,19 @@
   </header>
 
   <main>
-    <!-- Página da solução 2: Webchat do chatbot. Tudo aqui foi feito para cumprir o requisito
-         de AI & Chatbot: Webchat em texto ligado ao fluxo do Node-RED (chatbot/). -->
+    <!-- Página da solução 2: Webchat do chatbot -->
     <div class="hero">
       <div class="hero__texto">
         <p class="sobretitulo">Webchat do chatbot</p>
         <h1 class="titulo-pagina">Converse com o assistente</h1>
         <p class="texto-destaque">Este é o mesmo chatbot do Telegram, direto no navegador. Entre com o seu nome e escreva ou fale.</p>
 
-        <div class="pilar pilar--destaque">
-          <h2 class="pilar__titulo">Como o chatbot funciona</h2>
-          <p class="texto-suave">Esta página é o Webchat do chatbot e foi feita para cumprir os requisitos de AI &amp; Chatbot da Global Solution. Ele entende 5 intenções (remédio, confirmar dose, consulta, pedir ajuda e falar com a família) e 5 entidades por IA, no Node-RED, com contexto por conversa.</p>
-        </div>
+        <details class="pilar pilar--destaque">
+          <summary class="pilar__resumo">
+            <h2 class="pilar__titulo">Como o chatbot funciona</h2>
+          </summary>
+          <p class="texto-suave pilar__texto">Esta página é o Webchat do chatbot e foi feita para cumprir os requisitos de AI &amp; Chatbot da Global Solution. Ele entende 5 intenções (remédio, confirmar dose, consulta, pedir ajuda e falar com a família) e 5 entidades por IA, no Node-RED, com contexto por conversa.</p>
+        </details>
         <div class="pilar">
           <h2 class="pilar__titulo">Prefere o Telegram?</h2>
           <p class="texto-suave">Lá o Acompanha também manda os lembretes de remédio e avisa a família, por áudio.</p>
@@ -81,7 +85,7 @@
 
             <form class="chat__form" id="chat-form" novalidate>
               <label class="oculto" for="chat-texto">Sua mensagem</label>
-              <input class="campo__entrada" id="chat-texto" type="text" maxlength="500" autocomplete="off" placeholder="Digite o seu nome para entrar">
+              <input class="campo__entrada" id="chat-texto" type="text" maxlength="500" autocomplete="off" placeholder="Seu nome">
               <button class="botao botao--assistente" id="chat-enviar" type="submit">Enviar</button>
             </form>
             <p class="chat__erro" id="chat-erro" role="alert"></p>
@@ -103,7 +107,7 @@
     </div>
   </footer>
 
-  <script src="js/script.js"></script>
+  <script src="js/menu.js"></script>
   <script src="js/config.js"></script>
   <script src="js/assistente.js"></script>
 </body>
