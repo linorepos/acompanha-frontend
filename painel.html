@@ -18,7 +18,10 @@
              srcset="assets/images/logo-acompanha@1x.png 1x, assets/images/logo-acompanha@2x.png 2x, assets/images/logo-acompanha@3x.png 3x"
              alt="Acompanha — início" width="193" height="32">
       </a>
-      <nav aria-label="Menu principal">
+      <button class="menu-botao" type="button" aria-expanded="false" aria-controls="navegacao" aria-label="Abrir menu">
+        <img src="assets/icons/icone-conectividade.png" alt="" width="74" height="96">
+      </button>
+      <nav class="navegacao" id="navegacao" aria-label="Menu principal">
         <ul class="menu">
           <li><a class="menu__link" href="index.html">Início</a></li>
           <li><a class="menu__link" href="sobre.html">Sobre</a></li>
@@ -33,15 +36,13 @@
   </header>
 
   <main>
-    <!-- Página da solução 1: Painel da família -->
-    <!-- Os dados são de exemplo: o painel ainda não está ligado ao chatbot -->
+    <!-- Página da solução 1: Painel da família (dados de exemplo) -->
     <div class="painel">
       <div class="painel__cabecalho">
         <div class="painel__identificacao">
           <p class="texto-suave">Painel de Ana · acompanhando</p>
           <h1 class="titulo-pagina">Hilda, 78 anos</h1>
         </div>
-        <button type="button" class="botao botao--destaque botao--pequeno" id="abrir-modal">+ Adicionar remédio</button>
       </div>
 
       <ul class="resumo">
@@ -62,7 +63,7 @@
       <div class="painel__colunas">
         <section class="cartao cartao--largo" aria-labelledby="titulo-hoje">
           <div class="cartao__topo">
-            <h2 class="cartao__titulo" id="titulo-hoje">Remédios de hoje</h2>
+            <h2 class="cartao__titulo" id="titulo-hoje">Lembrete de hoje</h2>
             <div class="filtros" role="group" aria-label="Filtrar remédios">
               <button type="button" class="filtro filtro--ativo" data-status="todos" aria-pressed="true">Todos</button>
               <button type="button" class="filtro" data-status="pendente" aria-pressed="false">Pendentes</button>
@@ -78,6 +79,7 @@
                 <span>1 comprimido · pressão</span>
               </div>
               <span class="etiqueta etiqueta--ok">Confirmado às 8h04 por áudio</span>
+              <button type="button" class="remedio__remover" aria-label="Remover Losartana 50mg">×</button>
             </li>
             <li class="remedio" data-status="confirmado">
               <strong class="remedio__hora">12:00</strong>
@@ -86,6 +88,7 @@
                 <span>1 comprimido · após o almoço</span>
               </div>
               <span class="etiqueta etiqueta--ok">Confirmado às 12h20</span>
+              <button type="button" class="remedio__remover" aria-label="Remover Metformina 850mg">×</button>
             </li>
             <li class="remedio" data-status="confirmado">
               <strong class="remedio__hora">14:00</strong>
@@ -94,6 +97,7 @@
                 <span>Lembrete enviado às 13h</span>
               </div>
               <span class="etiqueta etiqueta--ok">Confirmado</span>
+              <button type="button" class="remedio__remover" aria-label="Remover Consulta UBS">×</button>
             </li>
             <li class="remedio" data-status="pendente">
               <strong class="remedio__hora">20:00</strong>
@@ -102,24 +106,28 @@
                 <span>1 comprimido · colesterol</span>
               </div>
               <span class="etiqueta etiqueta--alerta">Sem resposta</span>
+              <button type="button" class="remedio__remover" aria-label="Remover Sinvastatina 20mg">×</button>
             </li>
           </ul>
         </section>
 
-        <section class="cartao cartao--estreito" aria-labelledby="titulo-semana">
-          <h2 class="cartao__titulo" id="titulo-semana">Últimos 7 dias</h2>
-          <!-- São 3 doses por dia: a classe barra--N (1 a 3) define a altura -->
-          <div class="grafico" role="img" aria-label="Doses confirmadas por dia: segunda 3, terça 3, quarta 2, quinta 3, sexta 1, sábado 3, domingo 2, de 3 por dia">
-            <div class="grafico__dia"><span class="barra barra--3"></span><span class="grafico__rotulo">Seg</span></div>
-            <div class="grafico__dia"><span class="barra barra--3"></span><span class="grafico__rotulo">Ter</span></div>
-            <div class="grafico__dia"><span class="barra barra--2"></span><span class="grafico__rotulo">Qua</span></div>
-            <div class="grafico__dia"><span class="barra barra--3"></span><span class="grafico__rotulo">Qui</span></div>
-            <div class="grafico__dia"><span class="barra barra--1 barra--alerta"></span><span class="grafico__rotulo">Sex</span></div>
-            <div class="grafico__dia"><span class="barra barra--3"></span><span class="grafico__rotulo">Sáb</span></div>
-            <div class="grafico__dia"><span class="barra barra--2"></span><span class="grafico__rotulo">Dom</span></div>
-          </div>
-          <p class="cartao__nota"><span class="texto-alerta">2 esquecimentos</span> na sexta. O padrão é avisado à família quando se repete.</p>
-        </section>
+        <div class="painel__lateral">
+          <section class="cartao cartao--estreito" aria-labelledby="titulo-semana">
+            <h2 class="cartao__titulo" id="titulo-semana">Últimos 7 dias</h2>
+            <!-- barra--N: doses confirmadas no dia (de 3) -->
+            <div class="grafico" role="img" aria-label="Doses confirmadas por dia: segunda 3, terça 3, quarta 2, quinta 3, sexta 1, sábado 3, domingo 2, de 3 por dia">
+              <div class="grafico__dia"><span class="barra barra--3"></span><span class="grafico__rotulo">Seg</span></div>
+              <div class="grafico__dia"><span class="barra barra--3"></span><span class="grafico__rotulo">Ter</span></div>
+              <div class="grafico__dia"><span class="barra barra--2"></span><span class="grafico__rotulo">Qua</span></div>
+              <div class="grafico__dia"><span class="barra barra--3"></span><span class="grafico__rotulo">Qui</span></div>
+              <div class="grafico__dia"><span class="barra barra--1 barra--alerta"></span><span class="grafico__rotulo">Sex</span></div>
+              <div class="grafico__dia"><span class="barra barra--3"></span><span class="grafico__rotulo">Sáb</span></div>
+              <div class="grafico__dia"><span class="barra barra--2"></span><span class="grafico__rotulo">Dom</span></div>
+            </div>
+            <p class="cartao__nota"><span class="texto-alerta">2 esquecimentos</span> na sexta. O padrão é avisado à família quando se repete.</p>
+          </section>
+          <button type="button" class="botao botao--destaque botao--pequeno" id="abrir-modal">+ Adicionar lembrete</button>
+        </div>
       </div>
 
       <div class="aviso" role="status">
@@ -134,27 +142,57 @@
       </div>
     </div>
 
-    <!-- Modal nativo do HTML: abre com showModal() no script.js -->
+    <!-- Modal: abre com showModal() no painel.js -->
     <dialog class="modal" id="modal-remedio" aria-labelledby="titulo-modal">
       <form class="modal__formulario" method="dialog">
-        <h2 class="cartao__titulo" id="titulo-modal">Adicionar remédio</h2>
-        <label class="campo" for="remedio-nome">Nome do remédio
-          <input class="campo__entrada" type="text" id="remedio-nome" name="nome" placeholder="Ex: Losartana">
-        </label>
+        <h2 class="cartao__titulo" id="titulo-modal">Adicionar lembrete</h2>
         <div class="modal__linha">
-          <label class="campo" for="remedio-dose">Dose
-            <input class="campo__entrada" type="text" id="remedio-dose" name="dose" placeholder="1 comprimido">
+          <label class="campo" for="lembrete-tipo">Tipo
+            <select class="campo__entrada" id="lembrete-tipo" name="tipo">
+              <option value="remedio">Remédio</option>
+              <option value="consulta">Consulta</option>
+            </select>
           </label>
           <label class="campo" for="remedio-horario">Horário
             <input class="campo__entrada" type="time" id="remedio-horario" name="horario" value="08:00">
           </label>
         </div>
+        <label class="campo" for="lembrete-nome"><span id="rotulo-nome">Nome do remédio</span>
+          <input class="campo__entrada" type="text" id="lembrete-nome" name="nome" placeholder="Ex: Losartana" required>
+        </label>
+
+        <!-- Campos de remédio -->
+        <fieldset class="modal__grupo" id="grupo-remedio">
+          <legend class="oculto">Detalhes do remédio</legend>
+          <div class="modal__linha">
+            <label class="campo" for="lembrete-dosagem">Dosagem
+              <input class="campo__entrada" type="text" id="lembrete-dosagem" name="dosagem" placeholder="Ex: 50mg" required>
+            </label>
+            <label class="campo" for="lembrete-quantidade">Quantidade
+              <input class="campo__entrada" type="text" id="lembrete-quantidade" name="quantidade" placeholder="Ex: 1 comprimido">
+            </label>
+          </div>
+          <label class="campo" for="lembrete-quando">Quando
+            <input class="campo__entrada" type="text" id="lembrete-quando" name="quando" placeholder="Ex: após o almoço">
+          </label>
+        </fieldset>
+
+        <!-- Campos de consulta -->
+        <fieldset class="modal__grupo" id="grupo-consulta" hidden disabled>
+          <legend class="oculto">Detalhes da consulta</legend>
+          <label class="campo" for="lembrete-onde">Onde
+            <input class="campo__entrada" type="text" id="lembrete-onde" name="onde" placeholder="Ex: UBS Vila Mariana" required>
+          </label>
+          <label class="campo" for="lembrete-comentario">Comentário
+            <input class="campo__entrada" type="text" id="lembrete-comentario" name="comentario" placeholder="Ex: levar os últimos exames">
+          </label>
+        </fieldset>
         <label class="modal__opcao" for="remedio-aviso">
           <input type="checkbox" id="remedio-aviso" name="aviso" checked>
           Avisar a família se não confirmar em 30 min
         </label>
         <div class="modal__botoes">
-          <button type="submit" class="botao botao--secundario botao--pequeno" value="cancelar">Cancelar</button>
+          <button type="submit" class="botao botao--secundario botao--pequeno" value="cancelar" formnovalidate>Cancelar</button>
           <button type="submit" class="botao botao--assistente botao--pequeno" value="salvar">Salvar lembrete</button>
         </div>
       </form>
@@ -173,6 +211,7 @@
     </div>
   </footer>
 
-  <script src="js/script.js"></script>
+  <script src="js/menu.js"></script>
+  <script src="js/painel.js"></script>
 </body>
 </html>
