@@ -18,7 +18,10 @@
              srcset="assets/images/logo-acompanha@1x.png 1x, assets/images/logo-acompanha@2x.png 2x, assets/images/logo-acompanha@3x.png 3x"
              alt="Acompanha — início" width="193" height="32">
       </a>
-      <nav aria-label="Menu principal">
+      <button class="menu-botao" type="button" aria-expanded="false" aria-controls="navegacao" aria-label="Abrir menu">
+        <img src="assets/icons/icone-conectividade.png" alt="" width="74" height="96">
+      </button>
+      <nav class="navegacao" id="navegacao" aria-label="Menu principal">
         <ul class="menu">
           <li><a class="menu__link" href="index.html">Início</a></li>
           <li><a class="menu__link" href="sobre.html">Sobre</a></li>
@@ -39,26 +42,31 @@
         <p class="texto-suave">Dúvidas, sugestões ou quer testar o Acompanha com alguém da sua família? Mande uma mensagem.</p>
         <dl class="contato__dados">
           <dt>E-mail da equipe</dt>
-          <dd>adm.acompanha@gmail.com</dd>
+          <dd><a href="mailto:adm.acompanha@gmail.com">adm.acompanha@gmail.com</a></dd>
           <dt>Repositório</dt>
           <dd><a href="https://github.com/linorepos/acompanha-frontend" target="_blank" rel="noopener noreferrer">github.com/linorepos/acompanha-frontend</a></dd>
         </dl>
       </div>
 
-      <form class="formulario" id="form-contato" action="#" method="post">
+      <form class="formulario" id="form-contato" action="#" method="post" novalidate>
         <label class="campo" for="nome">Nome
-          <input class="campo__entrada" type="text" id="nome" name="nome" placeholder="Seu nome completo">
+          <input class="campo__entrada" type="text" id="nome" name="nome" aria-describedby="erro-nome" placeholder="Seu nome completo">
+          <span class="campo__erro" id="erro-nome"></span>
         </label>
         <label class="campo" for="email">E-mail
-          <input class="campo__entrada" type="email" id="email" name="email" placeholder="voce@exemplo.com">
+          <input class="campo__entrada" type="email" id="email" name="email" aria-describedby="erro-email" placeholder="voce@exemplo.com">
+          <span class="campo__erro" id="erro-email"></span>
         </label>
         <label class="campo" for="assunto">Assunto
-          <input class="campo__entrada" type="text" id="assunto" name="assunto" placeholder="Ex: Quero testar com minha mãe">
+          <input class="campo__entrada" type="text" id="assunto" name="assunto" aria-describedby="erro-assunto" placeholder="Ex: Quero testar com minha mãe">
+          <span class="campo__erro" id="erro-assunto"></span>
         </label>
         <label class="campo" for="mensagem">Mensagem
-          <textarea class="campo__entrada" id="mensagem" name="mensagem" rows="5" placeholder="Escreva sua mensagem"></textarea>
+          <textarea class="campo__entrada" id="mensagem" name="mensagem" aria-describedby="erro-mensagem" rows="4" placeholder="Escreva sua mensagem"></textarea>
+          <span class="campo__erro" id="erro-mensagem"></span>
         </label>
-        <button type="submit" class="botao botao--principal">Enviar mensagem</button>
+        <button type="submit" class="botao botao--principal" id="botao-enviar">Enviar mensagem</button>
+        <p class="formulario__status" id="status-contato" role="status" aria-live="polite"></p>
       </form>
     </section>
   </main>
@@ -75,6 +83,7 @@
     </div>
   </footer>
 
-  <script src="js/script.js"></script>
+  <script src="js/menu.js"></script>
+  <script src="js/contato.js"></script>
 </body>
 </html>
