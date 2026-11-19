@@ -1,48 +1,36 @@
-/* ==========================================================================
-   Acompanha — style.css
-   1. Variáveis
-   2. Base
-   3. Cabeçalho e navegação
-   4. Rodapé
-   5. Componentes reutilizáveis (botões, seções, textos)
-   6. Página inicial
-   7. Sobre
-   8. FAQ
-   9. Integrantes
-   10. Contato
-   11. Painel da família
-   Medidas em rem (1rem = 16px); só bordas e contorno de foco ficam em px.
-   Layout feito só com Flexbox.
-   ========================================================================== */
+/* Acompanha — style.css
+   Seções: 1 Variáveis · 2 Base · 3 Cabeçalho · 4 Rodapé · 5 Componentes · 6 Início · 7 Sobre
+   8 FAQ · 9 Integrantes · 10 Contato · 11 Painel · 12 Animações · 13 Responsividade
+   Medidas em rem e layout só com Flexbox. */
 
 /* 1. Variáveis */
 :root {
-  --cor-principal: #1E2F5E;          /* azul-marinho sóbrio */
-  --cor-destaque: #F97316;           /* laranja: alerta e risco, em pequenos detalhes */
-  --cor-destaque-texto: #C2410C;     /* laranja mais escuro, para texto ter contraste no fundo claro */
-  --cor-destaque-clara: #FFF1E6;     /* fundo de etiquetas e ícones de alerta */
-  --cor-fundo: #F8FAFC;              /* off-white */
-  --cor-texto: #1E293B;              /* cinza-escuro */
+  --cor-principal: #1E2F5E;
+  --cor-destaque: #F97316;           /* alerta */
+  --cor-destaque-texto: #C2410C;     /* laranja com contraste para texto */
+  --cor-destaque-clara: #FFF1E6;
+  --cor-fundo: #F8FAFC;
+  --cor-texto: #1E293B;
 
   --cor-principal-escura: #141F40;
 
-  /* Verde-água: assistente, ações de conversa e dados em destaque */
-  --cor-assistente: #0E7C74;         /* botões "Testar / Conversar com o assistente" */
-  --cor-assistente-escura: #0A5F59;  /* hover desses botões */
-  --cor-assistente-clara: #E3F1EF;   /* balões de resposta do assistente */
-  --cor-dado: #0B6A77;               /* números e valores em destaque */
+  /* Verde-água: assistente e dados */
+  --cor-assistente: #0E7C74;
+  --cor-assistente-escura: #0A5F59;
+  --cor-assistente-clara: #E3F1EF;
+  --cor-dado: #0B6A77;
   --cor-principal-clara: #E6EAF2;
   --cor-superficie: #F1F5F9;
   --cor-branco: #FFFFFF;
   --cor-texto-suave: #475569;
-  --cor-texto-apoio: #64748B;
+  --cor-texto-apoio: #5B6B80;
   --cor-borda: #E2E8F0;
   --cor-borda-forte: #CBD5E1;
   --cor-rodape-texto: #C3CAD9;
 
   --fonte: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --fonte-marca: "Montserrat", var(--fonte);                  /* mesma fonte do logo */
-  --fonte-leitura: "Atkinson Hyperlegible", var(--fonte);     /* criada para baixa visão */
+  --fonte-marca: "Montserrat", var(--fonte);
+  --fonte-leitura: "Atkinson Hyperlegible", var(--fonte);     /* fonte feita para baixa visão */
   --largura-max: 75rem;
 }
 
@@ -51,9 +39,18 @@
   box-sizing: border-box;
 }
 
-/* body em coluna: o <main> ocupa o espaço livre e o rodapé fica sempre no fim */
+/* 1rem = 14,7px no desktop (16px até 1024px, ver seção 13) */
+html {
+  font-size: 91.875%;
+  /* Evita o layout pular quando a barra de rolagem aparece */
+  scrollbar-gutter: stable;
+}
+
+/* Rodapé sempre no fim da página */
 body {
   min-height: 100vh;
+  overflow-x: hidden;
+  overflow-wrap: break-word;
   display: flex;
   flex-direction: column;
   margin: 0;
@@ -99,14 +96,14 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 summary:focus-visible {
-  outline: 3px solid var(--cor-destaque);
+  outline: 3px solid var(--cor-principal);
   outline-offset: 3px;
 }
 
 /* 3. Cabeçalho e navegação */
 .cabecalho {
   background: var(--cor-branco);
-  border-bottom: 1px solid var(--cor-borda);
+  border-bottom: 1px solid var(--cor-borda-forte);
 }
 
 .cabecalho__conteudo {
@@ -123,6 +120,11 @@ summary:focus-visible {
 .cabecalho__logo img {
   height: 2rem;
   width: auto;
+}
+
+/* Menu hambúrguer: só no tablet e no celular (seção 13) */
+.menu-botao {
+  display: none;
 }
 
 .menu {
@@ -145,11 +147,13 @@ summary:focus-visible {
 }
 
 .menu__link:hover {
-  background: var(--cor-superficie);
   color: var(--cor-texto);
+  text-decoration: underline;
+  text-decoration-color: var(--cor-assistente);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.4rem;
 }
 
-/* Chamada principal do menu */
 .menu__link--destaque {
   padding: 0.75rem 1.25rem;
   border-radius: 0.75rem;
@@ -161,17 +165,17 @@ summary:focus-visible {
 .menu__link--destaque:hover {
   background: var(--cor-assistente-escura);
   color: var(--cor-branco);
+  text-decoration: none;
 }
 
-/* Página atual */
 .menu__link--ativo {
-  background: var(--cor-principal-clara);
   color: var(--cor-principal);
   font-weight: 700;
 }
 
 /* 4. Rodapé */
 .rodape {
+  flex-shrink: 0;
   background: var(--cor-principal);
   color: var(--cor-branco);
 }
@@ -179,7 +183,7 @@ summary:focus-visible {
 .rodape__conteudo {
   max-width: var(--largura-max);
   margin: 0 auto;
-  padding: 3rem 2rem;
+  padding: 2.05rem 2rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -206,6 +210,14 @@ summary:focus-visible {
 
 .rodape__links a {
   color: var(--cor-branco);
+  text-decoration: none;
+}
+
+.rodape__links a:hover {
+  color: var(--cor-branco);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.4rem;
 }
 
 /* 5. Componentes reutilizáveis */
@@ -215,11 +227,15 @@ summary:focus-visible {
   padding: 4.5rem 2rem;
 }
 
-/* Faixa branca de ponta a ponta, com o conteúdo centralizado dentro */
+/* Faixas de fundo de ponta a ponta */
 .faixa-branca {
   background: var(--cor-branco);
   border-top: 1px solid var(--cor-borda);
   border-bottom: 1px solid var(--cor-borda);
+}
+
+.faixa-destaque {
+  background: var(--cor-principal-clara);
 }
 
 .titulo-secao {
@@ -242,7 +258,7 @@ summary:focus-visible {
 }
 
 .texto-destaque {
-  font-size: 1.3125rem;
+  font-size: 1.25rem;
   color: var(--cor-texto-suave);
 }
 
@@ -300,7 +316,7 @@ summary:focus-visible {
   color: var(--cor-principal);
 }
 
-/* Laranja: ação principal da página que precisa se destacar do menu (ex.: "Adicionar remédio") */
+/* Botão laranja: ação principal da página */
 .botao--destaque {
   background: var(--cor-destaque-texto);
   border-color: var(--cor-destaque-texto);
@@ -313,20 +329,18 @@ summary:focus-visible {
   color: var(--cor-branco);
 }
 
-/* Versão menor, para ações dentro de páginas (ex.: painel da família) */
 .botao--pequeno {
   padding: 0.625rem 1.125rem;
   border-radius: 0.75rem;
   font-size: 1rem;
 }
 
-/* Palavras de alerta dentro de um parágrafo */
 .texto-alerta {
   color: var(--cor-destaque-texto);
   font-weight: 700;
 }
 
-/* Acordeão de perguntas: usa <details> e <summary> do próprio HTML */
+/* Acordeão com <details> e <summary> */
 .pergunta {
   background: var(--cor-branco);
   border: 2px solid var(--cor-borda);
@@ -434,7 +448,7 @@ summary:focus-visible {
 }
 
 .conversa__nome span {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   color: var(--cor-texto-apoio);
 }
 
@@ -462,7 +476,7 @@ summary:focus-visible {
   align-items: center;
   gap: 0.5rem;
   margin-top: 0.5rem;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 700;
   color: var(--cor-assistente);
 }
@@ -474,9 +488,15 @@ summary:focus-visible {
 
 /* Como funciona */
 .passos__conteudo {
+  padding-top: 4.05rem;
+  padding-bottom: 4.05rem;
   display: flex;
   flex-direction: column;
   gap: 2.5rem;
+}
+
+.passos__conteudo .titulo-secao {
+  margin-top: 1.5rem;
 }
 
 .passos {
@@ -508,14 +528,13 @@ summary:focus-visible {
   font-weight: 800;
 }
 
-/* Único destaque laranja da página: o passo do alerta */
 .passo__numero--alerta {
-  background: var(--cor-destaque);
-  color: var(--cor-texto);
+  background: var(--cor-destaque-texto);
+  color: var(--cor-branco);
 }
 
 .passo__titulo {
-  font-size: 1.1875rem;
+  font-size: 1.25rem;
 }
 
 /* Por que isso importa */
@@ -558,7 +577,7 @@ summary:focus-visible {
 
 .dado__descricao {
   margin: 0;
-  font-size: 1.125rem;
+  font-size: 1.0625rem;
   color: var(--cor-texto-suave);
 }
 
@@ -603,7 +622,7 @@ summary:focus-visible {
   max-width: 45rem;
 }
 
-/* Problema, objetivo e proposta: três colunas de texto separadas por uma linha */
+/* Problema, objetivo e proposta */
 .pilares {
   max-width: var(--largura-max);
   margin: 0 auto;
@@ -634,7 +653,6 @@ summary:focus-visible {
   font-size: 1.375rem;
 }
 
-/* O problema ganha a linha e o rótulo em laranja (alerta) */
 .pilar--alerta {
   border-top-color: var(--cor-destaque);
 }
@@ -643,16 +661,64 @@ summary:focus-visible {
   color: var(--cor-destaque-texto);
 }
 
-/* A proposta ganha a linha de destaque */
 .pilar--destaque {
   border-top-color: var(--cor-principal);
 }
 
-/* Para quem é: três colunas simples */
+/* Acordeão dos pilares (sem JavaScript) */
+.pilares {
+  align-items: flex-start;
+}
+
+details.pilar {
+  display: block;
+}
+
+.pilar__resumo {
+  position: relative;
+  padding-right: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.pilar__resumo::-webkit-details-marker {
+  display: none;
+}
+
+.pilar__resumo::after {
+  content: "+";
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--cor-principal);
+}
+
+details.pilar[open] .pilar__resumo::after {
+  content: "−";
+}
+
+.pilar--alerta .pilar__resumo::after {
+  color: var(--cor-destaque-texto);
+}
+
+.pilar__texto {
+  margin-top: 0.75rem;
+}
+
+/* Para quem é */
 .publico {
   display: flex;
   flex-direction: column;
   gap: 1.75rem;
+}
+
+.publico .titulo-secao {
+  margin-bottom: 1rem;
 }
 
 .publico__lista {
@@ -669,10 +735,14 @@ summary:focus-visible {
 }
 
 .publico__item h3 {
+  font-size: 1.25rem;
+}
+
+.publico__item p {
   font-size: 1.125rem;
 }
 
-/* Tecnologias: lista em linhas, nome à esquerda e descrição à direita */
+/* Tecnologias */
 .tecnologias {
   display: flex;
   flex-direction: column;
@@ -713,7 +783,7 @@ summary:focus-visible {
 .faq {
   max-width: var(--largura-max);
   margin: 0 auto;
-  padding: 4.5rem 2rem;
+  padding: 4.5rem 2rem 7rem;
   display: flex;
   flex-direction: column;
   gap: 1.75rem;
@@ -763,20 +833,16 @@ summary:focus-visible {
   border-radius: 1.125rem;
 }
 
-.pergunta__textos {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
+/* Texto só para leitor de tela */
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
 }
 
-.pergunta__tema {
-  font-size: 0.875rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--cor-principal);
-}
-
-/* Usado pelo filtro em JavaScript para esconder perguntas */
+/* Usado pelo filtro em JavaScript */
 .escondido {
   display: none;
 }
@@ -811,7 +877,7 @@ summary:focus-visible {
 }
 
 .integrante {
-  flex: 0 0 calc((100% - 3.75rem) / 4);   /* 4 cards por linha (3 espaços de 1.25rem) */
+  flex: 0 0 calc((100% - 3.75rem) / 4);   /* 4 por linha */
   padding: 1.75rem;
   display: flex;
   flex-direction: column;
@@ -838,11 +904,11 @@ summary:focus-visible {
 }
 
 .integrante__nome {
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
 }
 
 .integrante__rm {
-  font-size: 1rem;
+  font-size: 0.9375rem;
   color: var(--cor-texto-apoio);
 }
 
@@ -860,24 +926,38 @@ summary:focus-visible {
   gap: 0.625rem;
 }
 
+/* Botões só com ícone (nome no aria-label) */
 .integrante__links a {
-  display: block;
-  padding: 0.625rem 1rem;
-  border: 2px solid var(--cor-principal);
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 0.75rem;
-  font-size: 1rem;
-  font-weight: 700;
-  text-decoration: none;
+  color: var(--cor-branco);
+}
+
+.integrante__links svg {
+  width: 1.375rem;
+  height: 1.375rem;
 }
 
 .integrante__links .link-github {
   background: var(--cor-principal);
+}
+
+.integrante__links .link-github:hover {
+  background: var(--cor-principal-escura);
   color: var(--cor-branco);
 }
 
 .integrante__links .link-linkedin {
-  background: var(--cor-branco);
-  color: var(--cor-principal);
+  background: var(--cor-assistente);
+}
+
+.integrante__links .link-linkedin:hover {
+  background: var(--cor-assistente-escura);
+  color: var(--cor-branco);
 }
 
 /* 10. Contato */
@@ -908,25 +988,34 @@ summary:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  background: var(--cor-principal-clara);
+  background: var(--cor-principal);
   border-radius: 1.25rem;
 }
 
 .contato__dados dt {
   font-weight: 700;
+  color: var(--cor-rodape-texto);
 }
 
 .contato__dados dd {
   margin: 0 0 0.5rem;
-  color: var(--cor-texto-suave);
+  color: var(--cor-branco);
+}
+
+.contato__dados a {
+  color: var(--cor-branco);
+}
+
+.contato__dados a:hover {
+  color: #93C5FD;
 }
 
 .formulario {
   flex: 1 1 32.5rem;
-  padding: 2rem;
+  padding: 1.7rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.0625rem;
   background: var(--cor-branco);
   border: 1px solid var(--cor-borda);
   border-radius: 1.5rem;
@@ -941,8 +1030,8 @@ summary:focus-visible {
 
 .campo__entrada {
   width: 100%;
-  min-height: 3.25rem;
-  padding: 0.75rem 1rem;
+  min-height: 2.75rem;
+  padding: 0.625rem 1rem;
   border: 2px solid var(--cor-borda-forte);
   border-radius: 0.75rem;
   background: var(--cor-branco);
@@ -951,29 +1040,68 @@ summary:focus-visible {
   font-weight: 400;
 }
 
-/* Foco dos campos: só a própria borda fica laranja, sólida e colada no campo */
 .campo__entrada:focus-visible {
   outline: none;
-  border-color: var(--cor-destaque);
+  border-color: var(--cor-principal);
+}
+
+/* Campo com erro: borda laranja */
+.campo__entrada--erro,
+.campo__entrada--erro:focus-visible {
+  border-color: var(--cor-destaque-texto);
 }
 
 textarea.campo__entrada {
   resize: vertical;
 }
 
-.formulario .botao {
-  align-self: flex-start;
-  padding: 1rem 2rem;
+/* Seta própria no select */
+select.campo__entrada {
+  appearance: none;
+  padding-right: 2.75rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%231E293B' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  cursor: pointer;
 }
 
-/* 11. Painel da família */
+.campo__erro {
+  color: var(--cor-destaque-texto);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.campo__erro:empty {
+  display: none;
+}
+
+.formulario__status {
+  margin: 0;
+  color: #15803D;
+  font-size: 1.0625rem;
+}
+
+.formulario__status:empty {
+  display: none;
+}
+
+.formulario .botao {
+  align-self: flex-start;
+  padding: 0.85rem 2rem;
+}
+
+.painel,
+.modal {
+  font-size: 1rem;
+}
+
 .painel {
   max-width: var(--largura-max);
   margin: 0 auto;
-  padding: 3rem 2rem 4.5rem;
+  padding: 2.55rem 2rem 3.825rem;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.7rem;
 }
 
 .painel__cabecalho {
@@ -981,52 +1109,52 @@ textarea.campo__entrada {
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .painel__identificacao {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
+  gap: 0.319rem;
 }
 
 /* Aviso de dose não confirmada */
 .aviso {
-  padding: 1rem 1.25rem;
+  padding: 1.02rem 1.274rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 1.02rem;
   background: var(--cor-branco);
   border: 1px solid var(--cor-borda);
   border-left: 4px solid var(--cor-destaque);
-  border-radius: 0.875rem;
+  border-radius: 0.893rem;
 }
 
 .aviso__conteudo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.764rem;
 }
 
 .aviso__icone {
-  flex: 0 0 1.5rem;
-  height: 1.5rem;
+  flex: 0 0 1.53rem;
+  height: 1.53rem;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   background: var(--cor-destaque-clara);
   color: var(--cor-destaque-texto);
-  font-size: 0.875rem;
+  font-size: 0.87rem;
   font-weight: 800;
 }
 
 .aviso__textos {
   display: flex;
   flex-direction: column;
-  font-size: 1rem;
+  font-size: 1.06rem;
 }
 
 .aviso__textos span {
@@ -1034,9 +1162,9 @@ textarea.campo__entrada {
 }
 
 .aviso__botao {
-  padding: 0.625rem 1rem;
+  padding: 0.637rem 1.02rem;
   border: 2px solid var(--cor-borda-forte);
-  border-radius: 0.75rem;
+  border-radius: 0.764rem;
   color: var(--cor-texto);
   font-size: 1rem;
   font-weight: 700;
@@ -1048,25 +1176,25 @@ textarea.campo__entrada {
   color: var(--cor-texto);
 }
 
-/* Números do dia: três cartões lado a lado */
+/* Resumo do dia */
 .resumo {
   margin: 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .resumo__item {
-  flex: 1 1 13.75rem;
-  padding: 1.375rem;
+  flex: 1 1 11.688rem;
+  padding: 1.169rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.212rem;
   background: var(--cor-branco);
   border: 1px solid var(--cor-borda);
-  border-radius: 1.125rem;
+  border-radius: 0.956rem;
 }
 
 .resumo__rotulo {
@@ -1075,7 +1203,7 @@ textarea.campo__entrada {
 
 .resumo__valor {
   font-family: var(--fonte-marca);
-  font-size: 2.125rem;
+  font-size: 1.75rem;
   line-height: 1.2;
 }
 
@@ -1084,34 +1212,49 @@ textarea.campo__entrada {
 }
 
 .resumo__valor--texto {
-  font-size: 1.375rem;
+  font-size: 1.25rem;
 }
 
-/* Lista de hoje (larga) e gráfico da semana (estreito) */
 .painel__colunas {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 1.5rem;
+  gap: 1.275rem;
 }
 
 .cartao {
   min-width: 0;
-  padding: 1.75rem;
+  padding: 1.488rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.062rem;
   background: var(--cor-branco);
   border: 1px solid var(--cor-borda);
-  border-radius: 1.375rem;
+  border-radius: 1.169rem;
 }
 
+/* Lembretes: a cor do status fica na borda */
 .cartao--largo {
-  flex: 1 1 35rem;
+  flex: 1 1 29.75rem;
 }
 
-.cartao--estreito {
-  flex: 1 1 20rem;
+.cartao--largo .remedio {
+  background: var(--cor-branco);
+}
+
+.cartao--largo .remedio[data-status="confirmado"] {
+  border: 2px solid #A9D6CF;
+}
+
+.cartao--largo .remedio[data-status="pendente"] {
+  border: 2px solid #FBC59A;
+}
+
+.painel__lateral {
+  flex: 1 1 17rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.275rem;
 }
 
 .cartao__topo {
@@ -1119,15 +1262,15 @@ textarea.campo__entrada {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.7rem;
 }
 
 .cartao__titulo {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .cartao__nota {
-  font-size: 1rem;
+  font-size: 0.9375rem;
   color: var(--cor-texto-suave);
 }
 
@@ -1137,65 +1280,90 @@ textarea.campo__entrada {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1.05rem;
 }
 
 .remedio {
-  padding: 1rem 1.125rem;
+  padding: 0.85rem 0.956rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 1rem;
+  gap: 0.85rem;
   background: var(--cor-fundo);
-  border-radius: 1rem;
+  border-radius: 0.85rem;
 }
 
-/* Usado pelo filtro: precisa vir depois de .remedio para vencer o display: flex */
+.remedio__remover {
+  width: 2rem;
+  height: 2rem;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--cor-texto-apoio);
+  font: inherit;
+  font-size: 1.375rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.remedio__remover:hover {
+  background: var(--cor-destaque-clara);
+  color: var(--cor-destaque-texto);
+}
+
+.etiqueta--neutra {
+  background: var(--cor-superficie);
+  color: var(--cor-texto-suave);
+}
+
 .remedio.escondido {
   display: none;
 }
 
 .remedio__hora {
-  flex: 0 0 4.5rem;
+  flex: 0 0 3.825rem;
   font-family: var(--fonte-marca);
-  font-size: 1.375rem;
+  font-size: 1.125rem;
 }
 
 .remedio__textos {
-  flex: 1 1 12.5rem;
+  flex: 1 1 10.625rem;
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
 .remedio__textos span {
-  font-size: 1rem;
+  font-size: 0.9375rem;
   color: var(--cor-texto-apoio);
 }
 
 .etiqueta {
-  padding: 0.5rem 0.875rem;
+  padding: 0.425rem 0.744rem;
   border-radius: 62.4rem;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   font-weight: 700;
 }
 
 .etiqueta--ok {
-  background: var(--cor-assistente-clara);
+  background: none;
   color: var(--cor-assistente-escura);
 }
 
 .etiqueta--alerta {
-  background: var(--cor-destaque-clara);
+  background: none;
   color: var(--cor-destaque-texto);
 }
 
-/* Gráfico de barras  */
+/* Gráfico da semana */
 .grafico {
-  height: 11.25rem;
+  height: 9.562rem;
   display: flex;
   align-items: flex-end;
-  gap: 0.625rem;
+  gap: 0.531rem;
 }
 
 .grafico__dia {
@@ -1203,7 +1371,7 @@ textarea.campo__entrada {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.425rem;
 }
 
 .grafico__rotulo {
@@ -1213,35 +1381,35 @@ textarea.campo__entrada {
 
 .barra {
   width: 100%;
-  max-width: 2rem;
-  border-radius: 0.5rem 0.5rem 0.25rem 0.25rem;
+  max-width: 1.7rem;
+  border-radius: 0.425rem 0.425rem 0.212rem 0.212rem;
   background: var(--cor-assistente);
 }
 
-/* Altura proporcional às doses confirmadas no dia (de 3 por dia) */
+/* Altura = doses confirmadas (de 3) */
 .barra--1 {
-  height: 3rem;
+  height: 2.55rem;
 }
 
 .barra--2 {
-  height: 6rem;
+  height: 5.1rem;
 }
 
 .barra--3 {
-  height: 9rem;
+  height: 7.65rem;
 }
 
 .barra--alerta {
   background: var(--cor-destaque-texto);
 }
 
-/* Modal "Adicionar remédio" */
+/* Modal "Adicionar lembrete" */
 .modal {
-  width: calc(100% - 3rem);
-  max-width: 32.5rem;
-  padding: 2rem;
+  width: calc(100% - 2.55rem);
+  max-width: 27.625rem;
+  padding: 1.7rem;
   border: none;
-  border-radius: 1.5rem;
+  border-radius: 1.275rem;
   color: var(--cor-texto);
 }
 
@@ -1252,28 +1420,42 @@ textarea.campo__entrada {
 .modal__formulario {
   display: flex;
   flex-direction: column;
-  gap: 1.125rem;
+  gap: 0.956rem;
 }
 
 .modal__linha {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .modal__linha .campo {
-  flex: 1 1 10rem;
+  flex: 1 1 8.5rem;
+}
+
+.modal__grupo {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.956rem;
+}
+
+.modal__grupo[hidden] {
+  display: none;
 }
 
 .modal__opcao {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.637rem;
 }
 
 .modal__opcao input {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.275rem;
+  height: 1.275rem;
   accent-color: var(--cor-assistente);
 }
 
@@ -1281,6 +1463,390 @@ textarea.campo__entrada {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 0.75rem;
-  padding-top: 0.375rem;
+  gap: 0.637rem;
+  padding-top: 0.319rem;
+}
+
+/* 12. Hovers e animações (desligadas com prefers-reduced-motion) */
+
+a,
+.botao,
+.filtro,
+.campo__entrada,
+.pergunta,
+.integrante,
+.resumo__item,
+.remedio,
+.publico__item,
+.passo__numero {
+  transition: color 0.25s, background-color 0.25s, border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.botao:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0.25rem 0.75rem rgba(30, 41, 59, 0.1);
+}
+
+.botao:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.filtro:hover {
+  border-color: var(--cor-principal);
+}
+
+.campo__entrada:hover {
+  border-color: var(--cor-texto-apoio);
+}
+
+.integrante:hover,
+.resumo__item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0.75rem 1.5rem rgba(30, 41, 59, 0.08);
+}
+
+.pergunta:hover,
+.remedio:hover {
+  box-shadow: 0 0.375rem 1rem rgba(30, 41, 59, 0.08);
+}
+
+.pergunta:hover {
+  border-color: var(--cor-borda-forte);
+}
+
+.passo:hover .passo__numero {
+  transform: scale(1.08);
+}
+
+.integrante__links a:hover {
+  transform: translateY(-2px);
+}
+
+/* Entrada suave da página, acordeões, chat e modal */
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+main {
+  animation: aparecer 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+details[open] > :not(summary) {
+  animation: aparecer 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chat .balao {
+  animation: aparecer 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes escurecer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal[open] {
+  animation: surgir 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.modal[open]::backdrop {
+  animation: escurecer 0.3s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* 13. Responsividade: desktop 1440px, tablet 1024px e 768px, mobile 390px */
+
+/* Desktop (até 1440px) */
+@media (max-width: 1440px) {
+  .menu {
+    gap: 0.25rem;
+  }
+
+  .menu__link {
+    padding: 0.625rem 0.75rem;
+  }
+}
+
+/* Tablet (até 1024px): menu hambúrguer e blocos reorganizados */
+@media (max-width: 1024px) {
+  /* Texto maior no tablet e no celular */
+  html {
+    font-size: 100%;
+  }
+
+  .menu-botao {
+    width: 2.75rem;
+    height: 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid var(--cor-borda-forte);
+    border-radius: 0.75rem;
+    background: var(--cor-branco);
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .menu-botao:hover {
+    background: var(--cor-superficie);
+  }
+
+  .menu-botao img {
+    width: 1rem;
+    height: auto;
+    transition: transform 0.2s;
+  }
+
+  .menu-botao[aria-expanded="true"] img {
+    transform: rotate(-90deg);
+  }
+
+  .navegacao {
+    display: none;
+    flex: 1 1 100%;
+  }
+
+  .navegacao--aberta {
+    display: block;
+    animation: aparecer 0.2s ease-out;
+  }
+
+  .menu {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+  }
+
+  .menu__link {
+    padding: 0.75rem 1rem;
+  }
+
+  .menu__link--destaque {
+    margin-top: 0.5rem;
+    text-align: center;
+  }
+
+  .passo,
+  .publico__item {
+    flex: 1 1 0;
+  }
+
+  .pilar {
+    flex: 1 1 100%;
+  }
+
+  .integrante {
+    flex: 0 0 calc((100% - 1.25rem) / 2);
+  }
+
+  .cartao--largo,
+  .painel__lateral {
+    flex: 1 1 100%;
+  }
+
+  .rodape__conteudo {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .rodape__links {
+    flex-wrap: wrap;
+  }
+}
+
+/* Tablet (até 768px) */
+@media (max-width: 768px) {
+  .cabecalho__conteudo,
+  .rodape__conteudo,
+  .secao,
+  .hero,
+  .faq-previa,
+  .apresentacao,
+  .pilares,
+  .faq,
+  .equipe,
+  .contato,
+  .painel {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .secao,
+  .faq-previa,
+  .equipe,
+  .contato {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+
+  .hero {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    gap: 2.5rem;
+  }
+
+  .apresentacao {
+    padding-top: 3rem;
+  }
+
+  .faq {
+    padding-top: 3rem;
+    padding-bottom: 4.5rem;
+  }
+
+  .hero__titulo {
+    font-size: 2.5rem;
+  }
+
+  .titulo-pagina,
+  .apresentacao .titulo-pagina {
+    font-size: 2.125rem;
+  }
+
+  .titulo-secao {
+    font-size: 1.625rem;
+  }
+
+  .passo,
+  .publico__item {
+    flex: 1 1 100%;
+  }
+
+  .tecnologia strong,
+  .tecnologia span {
+    flex: 1 1 100%;
+  }
+
+}
+
+/* Mobile (até 390px) */
+@media (max-width: 390px) {
+  .cabecalho__conteudo,
+  .rodape__conteudo,
+  .secao,
+  .hero,
+  .faq-previa,
+  .apresentacao,
+  .pilares,
+  .faq,
+  .equipe,
+  .contato,
+  .painel {
+    padding-left: 1.125rem;
+    padding-right: 1.125rem;
+  }
+
+  .cabecalho__logo img {
+    height: 1.75rem;
+  }
+
+  .hero__titulo {
+    font-size: 2.125rem;
+  }
+
+  .titulo-pagina,
+  .apresentacao .titulo-pagina {
+    font-size: 1.875rem;
+  }
+
+  .titulo-secao {
+    font-size: 1.5rem;
+  }
+
+  .texto-destaque,
+  .faq__cabecalho p,
+  .equipe__cabecalho p,
+  .contato__info > p {
+    font-size: 1.125rem;
+  }
+
+  .botoes .botao {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+
+  .integrante {
+    flex: 0 0 100%;
+  }
+
+  .formulario,
+  .cartao,
+  .modal {
+    padding: 1.25rem;
+  }
+
+  .contato__dados {
+    padding: 1.125rem;
+  }
+
+  .modal {
+    width: calc(100% - 2rem);
+  }
+
+  .conversa {
+    padding: 1.125rem;
+  }
+
+  .remedio__hora {
+    flex-basis: auto;
+  }
+
+  .cartao--largo .filtros {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    gap: 0.375rem;
+  }
+
+  .cartao--largo .filtro {
+    flex: 1 1 auto;
+    padding: 0.5rem 0.25rem;
+    font-size: 0.875rem;
+  }
+
+  .remedio {
+    position: relative;
+    padding-right: 2.75rem;
+  }
+
+  .remedio__textos {
+    flex: 1 1 60%;
+  }
+
+  .remedio__remover {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+  }
 }
